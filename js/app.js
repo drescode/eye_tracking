@@ -1,4 +1,4 @@
-import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416g";
+import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416h";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -27,15 +27,15 @@ import {
   updateConsent,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260416g";
-import { WebgazerController } from "./webgazer-controller.js?v=20260416g";
-import { CalibrationSequence } from "./calibration.js?v=20260416g";
-import { HeatmapRenderer } from "./heatmap.js?v=20260416g";
+} from "./data-store.js?v=20260416h";
+import { WebgazerController } from "./webgazer-controller.js?v=20260416h";
+import { CalibrationSequence } from "./calibration.js?v=20260416h";
+import { HeatmapRenderer } from "./heatmap.js?v=20260416h";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260416g";
+} from "./supabase-store.js?v=20260416h";
 
 const query = new URLSearchParams(window.location.search);
 const state = {
@@ -693,7 +693,6 @@ function renderStimulus(previewMode = false) {
         <div class="stimulus-stage__header">
           <div class="stimulus-stage__meta">
             <p class="stage-kicker">${previewMode ? "Admin Preview" : escapeHtml(page.title)}</p>
-            <h2>${escapeHtml(page.headline)}</h2>
           </div>
           <div class="timing-chip">${escapeHtml(page.imageSetId)}</div>
         </div>

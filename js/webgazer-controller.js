@@ -15,6 +15,9 @@ export class WebgazerController {
     this.lastValidAt = 0;
     this.lastSmoothedPoint = null;
     this.latestPoint = null;
+    this.lastListenerSampleAt = 0;
+    this.beginPerformanceNow = 0;
+    this.predictionPollTimer = null;
   }
 
   async initialize() {
@@ -59,10 +62,13 @@ export class WebgazerController {
       }
 
       phase = "begin";
+      this.beginPerformanceNow = performance.now();
+      this.lastListenerSampleAt = 0;
       const started = webgazer
         .setTracker("clmtrackr")
         .setRegression("ridge")
         .setGazeListener((data, elapsedTime) => {
+          this.lastListenerSampleAt = Date.now();
           this.handleGazeSample(data, elapsedTime);
         })
         .begin();
@@ -95,6 +101,7 @@ export class WebgazerController {
       }
 
       this.initialized = true;
+      this.startPredictionPolling(webgazer);
       this.setStatus("webcam active");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -109,6 +116,47 @@ export class WebgazerController {
 
   setStatus(status) {
     this.onStatusChange(status);
+  }
+
+  startPredictionPolling(webgazer) {
+    this.stopPredictionPolling();
+
+    if (typeof webgazer?.getCurrentPrediction !== "function") {
+      return;
+    }
+
+    const quietWindowMs = Math.max(250, this.sampleIntervalMs * 3);
+    this.predictionPollTimer = window.setInterval(async () => {
+      if (!this.initialized) {
+        return;
+      }
+
+      if (
+        this.lastListenerSampleAt &&
+        Date.now() - this.lastListenerSampleAt < quietWindowMs
+      ) {
+        return;
+      }
+
+      try {
+        const prediction = await Promise.resolve(
+          webgazer.getCurrentPrediction(),
+        );
+        const elapsedTimeMs = Math.round(
+          performance.now() - this.beginPerformanceNow,
+        );
+        this.handleGazeSample(prediction, elapsedTimeMs);
+      } catch (_error) {
+        // Ignore polling failures and keep the listener path active.
+      }
+    }, this.sampleIntervalMs);
+  }
+
+  stopPredictionPolling() {
+    if (this.predictionPollTimer) {
+      window.clearInterval(this.predictionPollTimer);
+      this.predictionPollTimer = null;
+    }
   }
 
   setCalibrationMode(enabled) {
@@ -258,6 +306,7 @@ export class WebgazerController {
     }
 
     try {
+      this.stopPredictionPolling();
       if (typeof window.webgazer.end === "function") {
         await window.webgazer.end();
       }
