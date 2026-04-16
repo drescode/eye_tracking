@@ -41,8 +41,23 @@ function safeParse(raw, fallback) {
   }
 }
 
+function ensureRemoteSubmissionShape(session, config) {
+  session.remoteSubmission = {
+    provider: config.remoteStorage?.provider || null,
+    status: "idle",
+    attempts: 0,
+    lastAttemptAt: null,
+    submittedAt: null,
+    lastError: null,
+    duplicate: false,
+    ...(session.remoteSubmission || {}),
+  };
+
+  return session;
+}
+
 export function createSession(config) {
-  return {
+  return ensureRemoteSubmissionShape({
     schemaVersion: 1,
     studyId: config.studyId,
     studyTitle: config.studyTitle,
@@ -81,7 +96,7 @@ export function createSession(config) {
       lastCsvDownloadAt: null,
       lastHeatmapDownloadAt: null,
     },
-  };
+  }, config);
 }
 
 export function saveCurrentSession(session) {
@@ -97,7 +112,7 @@ export function loadCurrentSession(config) {
     return saveCurrentSession(createSession(config));
   }
 
-  return session;
+  return saveCurrentSession(ensureRemoteSubmissionShape(session, config));
 }
 
 export function resetCurrentSession(config) {
@@ -236,6 +251,38 @@ export function completeStimulusPage(session, pageId, timeOnPageMs) {
 export function markStudyCompleted(session) {
   session.status = "completed";
   session.completedAt = nowIso();
+  return saveCurrentSession(session);
+}
+
+export function markRemoteSubmissionPending(session) {
+  session.remoteSubmission = {
+    ...(session.remoteSubmission || {}),
+    status: "uploading",
+    attempts: (session.remoteSubmission?.attempts || 0) + 1,
+    lastAttemptAt: nowIso(),
+    lastError: null,
+    duplicate: false,
+  };
+  return saveCurrentSession(session);
+}
+
+export function markRemoteSubmissionSuccess(session, options = {}) {
+  session.remoteSubmission = {
+    ...(session.remoteSubmission || {}),
+    status: "submitted",
+    submittedAt: nowIso(),
+    lastError: null,
+    duplicate: Boolean(options.duplicate),
+  };
+  return saveCurrentSession(session);
+}
+
+export function markRemoteSubmissionError(session, message) {
+  session.remoteSubmission = {
+    ...(session.remoteSubmission || {}),
+    status: "failed",
+    lastError: message,
+  };
   return saveCurrentSession(session);
 }
 

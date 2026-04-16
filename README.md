@@ -157,6 +157,57 @@ The app also uses `localStorage` during runtime for:
 - the current participant session
 - imported participant sessions for admin aggregation
 
+## Automatic collection with Supabase
+
+The project now includes a client-side Supabase submission path so participant sessions can be uploaded automatically from the debrief page instead of relying only on manual JSON download.
+
+Files involved:
+
+- [`js/config.js`](/Users/andre/Desktop/research/js/config.js)
+- [`js/supabase-store.js`](/Users/andre/Desktop/research/js/supabase-store.js)
+- [`supabase/schema.sql`](/Users/andre/Desktop/research/supabase/schema.sql)
+
+Setup steps:
+
+1. Create a Supabase project.
+2. In the Supabase SQL editor, run [`supabase/schema.sql`](/Users/andre/Desktop/research/supabase/schema.sql).
+3. In [`js/config.js`](/Users/andre/Desktop/research/js/config.js), set:
+   - `remoteStorage.supabase.enabled` to `true`
+   - `remoteStorage.supabase.url` to your project URL
+   - `remoteStorage.supabase.anonKey` to your publishable or anon key
+   - `remoteStorage.supabase.table` to `participant_sessions` unless you renamed the table
+4. Push the updated site to GitHub Pages.
+
+Important:
+
+- Use the Supabase publishable/anon key in the browser, not the service role key.
+- The included policy allows anonymous inserts only. It does not expose participant rows for browser-side reading.
+- Keep the JSON export buttons enabled as a backup in case a participant’s network fails during submission.
+
+## Python analysis from Supabase
+
+A starter script is included at [`analysis/supabase_visualize.py`](/Users/andre/Desktop/research/analysis/supabase_visualize.py).
+
+It fetches participant rows from the `participant_sessions` table, flattens the `page_summary` data, and writes:
+
+- `page_summary.csv`
+- `choice_counts.png`
+- `dwell_time.png`
+
+Example:
+
+```bash
+export SUPABASE_URL="https://YOUR_PROJECT_REF.supabase.co"
+export SUPABASE_SERVICE_ROLE_KEY="YOUR_SERVICE_ROLE_KEY"
+python analysis/supabase_visualize.py
+```
+
+Install the required packages first:
+
+```bash
+pip install requests pandas matplotlib seaborn
+```
+
 ## Admin mode and aggregated heatmaps
 
 Open the site with `?admin=1` to enable hidden researcher tools:

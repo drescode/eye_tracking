@@ -1,4 +1,4 @@
-import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js";
+import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416g";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -14,6 +14,9 @@ import {
   getImportedSessions,
   loadCurrentSession,
   markExportTime,
+  markRemoteSubmissionError,
+  markRemoteSubmissionPending,
+  markRemoteSubmissionSuccess,
   markStudyCompleted,
   markTrackingDenied,
   markTrackingInitialized,
@@ -24,10 +27,15 @@ import {
   updateConsent,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js";
-import { WebgazerController } from "./webgazer-controller.js";
-import { CalibrationSequence } from "./calibration.js";
-import { HeatmapRenderer } from "./heatmap.js";
+} from "./data-store.js?v=20260416g";
+import { WebgazerController } from "./webgazer-controller.js?v=20260416g";
+import { CalibrationSequence } from "./calibration.js?v=20260416g";
+import { HeatmapRenderer } from "./heatmap.js?v=20260416g";
+import {
+  getSupabaseConfigurationMessage,
+  isSupabaseConfigured,
+  submitSessionToSupabase,
+} from "./supabase-store.js?v=20260416g";
 
 const query = new URLSearchParams(window.location.search);
 const state = {
@@ -44,6 +52,7 @@ const state = {
   currentSelection: null,
   gateTimer: null,
   gateRemainingMs: STUDY_CONFIG.stimulus.minimumViewingTimeMs,
+  remoteSubmissionInFlight: false,
   debugRefreshTimer: null,
   debug: {
     showLiveDot: false,
@@ -178,6 +187,96 @@ function formatDuration(ms) {
     return "0.0s";
   }
   return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function getRemoteSubmissionUiState() {
+  const submission = state.session.remoteSubmission || {};
+
+  if (!isSupabaseConfigured(STUDY_CONFIG)) {
+    return {
+      label: "Not configured",
+      detail: getSupabaseConfigurationMessage(STUDY_CONFIG),
+      canRetry: false,
+    };
+  }
+
+  if (state.remoteSubmissionInFlight || submission.status === "uploading") {
+    return {
+      label: "Uploading now",
+      detail: "Participant data is being sent to your Supabase project automatically.",
+      canRetry: false,
+    };
+  }
+
+  if (submission.status === "submitted") {
+    return {
+      label: submission.duplicate ? "Already submitted" : "Upload complete",
+      detail: submission.duplicate
+        ? "This participant session was already present in Supabase, so it was not inserted twice."
+        : `Submitted automatically${submission.submittedAt ? ` on ${new Date(submission.submittedAt).toLocaleString()}` : ""}.`,
+      canRetry: false,
+    };
+  }
+
+  if (submission.status === "failed") {
+    return {
+      label: "Upload failed",
+      detail:
+        submission.lastError ||
+        "Supabase submission failed. Download the JSON backup or retry the upload.",
+      canRetry: true,
+    };
+  }
+
+  return {
+    label: "Ready to submit",
+    detail: "This page will submit the participant session automatically.",
+    canRetry: true,
+  };
+}
+
+async function uploadSessionToSupabase(options = {}) {
+  const { manual = false } = options;
+
+  if (!isSupabaseConfigured(STUDY_CONFIG)) {
+    const message = getSupabaseConfigurationMessage(STUDY_CONFIG);
+    if (manual) {
+      setAlert(message);
+    }
+    return;
+  }
+
+  if (state.remoteSubmissionInFlight) {
+    return;
+  }
+
+  state.remoteSubmissionInFlight = true;
+  state.session = markRemoteSubmissionPending(state.session);
+  if (state.view === "final") {
+    render();
+  }
+
+  try {
+    const result = await submitSessionToSupabase(STUDY_CONFIG, state.session);
+    state.session = markRemoteSubmissionSuccess(state.session, {
+      duplicate: result.duplicate,
+    });
+    state.remoteSubmissionInFlight = false;
+    if (state.view === "final") {
+      render();
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Supabase submission failed.";
+    state.session = markRemoteSubmissionError(state.session, message);
+    state.remoteSubmissionInFlight = false;
+    if (manual) {
+      setAlert(message);
+    }
+    if (state.view === "final") {
+      render();
+    }
+  }
 }
 
 function getCurrentStimulus() {
@@ -682,6 +781,8 @@ function renderFinal() {
     record: state.session.pages?.[page.id] || null,
   }));
   const stats = computeAggregateStats(getAllSessions(state.session), STUDY_CONFIG);
+  const remoteSubmissionUi = getRemoteSubmissionUiState();
+  const submissionConfigured = isSupabaseConfigured(STUDY_CONFIG);
 
   app.innerHTML = `
     <section class="final-grid">
@@ -750,8 +851,28 @@ function renderFinal() {
 
       <aside class="panel stack">
         <div class="upload-card">
+          <h3>Automatic Submission</h3>
+          <p>${
+            submissionConfigured
+              ? "Participant data is uploaded automatically to your Supabase project when this page loads."
+              : "Automatic upload is disabled until you add your Supabase URL, anon key, and table in js/config.js and run the SQL schema in supabase/schema.sql."
+          }</p>
+          <div class="pill">${escapeHtml(remoteSubmissionUi.label)}</div>
+          <p class="panel-muted" style="margin-top:12px;">${escapeHtml(
+            remoteSubmissionUi.detail,
+          )}</p>
+          ${
+            remoteSubmissionUi.canRetry
+              ? `<div class="button-row"><button id="retry-upload" class="button" type="button">${
+                  submissionConfigured ? "Retry upload" : "Show setup reminder"
+                }</button></div>`
+              : ""
+          }
+        </div>
+
+        <div class="upload-card">
           <h3>Export Study Data</h3>
-          <p>Download the current participant session as structured JSON, a CSV summary, or heatmap-ready JSON grouped by page.</p>
+          <p>Download the current participant session as a backup copy in JSON, CSV summary, or heatmap-ready JSON format.</p>
           <div class="export-row">
             <button id="export-json" class="button" type="button">Download JSON</button>
             <button id="export-csv" class="secondary-button" type="button">Download CSV</button>
@@ -759,13 +880,19 @@ function renderFinal() {
           </div>
         </div>
 
-        <div class="upload-card">
-          <h3>Session Control</h3>
-          <p>You can start a fresh browser session for the next participant after exporting the current data.</p>
-          <div class="button-row">
-            <button id="restart-study" class="button" type="button">Start new participant session</button>
-          </div>
-        </div>
+        ${
+          state.adminMode
+            ? `
+              <div class="upload-card">
+                <h3>Session Control</h3>
+                <p>You can start a fresh browser session for the next participant after exporting the current data.</p>
+                <div class="button-row">
+                  <button id="restart-study" class="button" type="button">Start new participant session</button>
+                </div>
+              </div>
+            `
+            : ""
+        }
 
         ${
           state.adminMode
@@ -846,17 +973,38 @@ function renderFinal() {
     state.session = markExportTime(state.session, "heatmap");
   });
 
-  document.getElementById("restart-study").addEventListener("click", () => {
-    clearGateTimer();
-    heatmapRenderer.clear();
-    state.session = createSession(STUDY_CONFIG);
-    state.session = saveCurrentSession(state.session);
-    state.activeStimulusPageId = null;
-    state.view = "intro";
-    state.stimulusIndex = 0;
-    setAlert("");
-    render();
-  });
+  const retryUploadButton = document.getElementById("retry-upload");
+  if (retryUploadButton) {
+    retryUploadButton.addEventListener("click", () => {
+      uploadSessionToSupabase({
+        manual: true,
+      });
+    });
+  }
+
+  const restartButton = document.getElementById("restart-study");
+  if (restartButton) {
+    restartButton.addEventListener("click", () => {
+      clearGateTimer();
+      heatmapRenderer.clear();
+      state.session = createSession(STUDY_CONFIG);
+      state.session = saveCurrentSession(state.session);
+      state.activeStimulusPageId = null;
+      state.view = "intro";
+      state.stimulusIndex = 0;
+      setAlert("");
+      render();
+    });
+  }
+
+  if (
+    STUDY_CONFIG.remoteStorage?.autoSubmitOnDebrief &&
+    submissionConfigured &&
+    !state.remoteSubmissionInFlight &&
+    state.session.remoteSubmission?.status === "idle"
+  ) {
+    uploadSessionToSupabase();
+  }
 }
 
 function renderAdminDrawer() {

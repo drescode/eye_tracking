@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
-  <rect width="800" height="1000" fill="#cfd6cd"/>
-  <circle cx="400" cy="330" r="164" fill="#f7faf6"/>
-  <rect x="110" y="552" width="580" height="224" rx="30" fill="#f9fbf8"/>
-  <text x="400" y="632" fill="#46594a" font-family="Georgia, serif" font-size="52" text-anchor="middle">Stimulus 5C</text>
-  <text x="400" y="696" fill="#647668" font-family="Arial, sans-serif" font-size="30" text-anchor="middle">Testimonial-Led Layout</text>
-</svg>

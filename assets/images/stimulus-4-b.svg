@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
-  <rect width="800" height="1000" fill="#e0c6bb"/>
-  <circle cx="400" cy="298" r="166" fill="#fff2eb"/>
-  <rect x="108" y="538" width="584" height="246" rx="30" fill="#fff9f5"/>
-  <text x="400" y="618" fill="#7a4435" font-family="Georgia, serif" font-size="52" text-anchor="middle">Stimulus 4B</text>
-  <text x="400" y="684" fill="#956050" font-family="Arial, sans-serif" font-size="30" text-anchor="middle">Confidence Badge</text>
-</svg>

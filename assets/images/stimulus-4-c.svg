@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
-  <rect width="800" height="1000" fill="#dcc0b4"/>
-  <rect x="98" y="138" width="604" height="210" rx="28" fill="#7a4435"/>
-  <rect x="98" y="404" width="604" height="382" rx="28" fill="#fff8f4"/>
-  <text x="400" y="260" fill="#fff" font-family="Arial, sans-serif" font-size="46" text-anchor="middle">Accessible Premium</text>
-  <text x="400" y="602" fill="#7a4435" font-family="Georgia, serif" font-size="52" text-anchor="middle">Stimulus 4C</text>
-</svg>
