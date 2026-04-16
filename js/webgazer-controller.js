@@ -25,48 +25,42 @@ export class WebgazerController {
     const webgazer = window.webgazer;
 
     try {
-      if (
-        typeof webgazer.detectCompatibility === "function" &&
-        webgazer.detectCompatibility() === false
-      ) {
-        throw new Error(
-          "This browser does not meet WebGazer's compatibility requirements.",
-        );
+      if (typeof webgazer.setGazeListener !== "function") {
+        throw new Error("WebGazer is loaded but the gaze listener API is unavailable.");
       }
 
-      let controller = webgazer;
-
-      if (typeof controller.setGazeListener === "function") {
-        controller = controller.setGazeListener((data, elapsedTime) => {
+      const started = webgazer
+        .setGazeListener((data, elapsedTime) => {
           this.handleGazeSample(data, elapsedTime);
-        });
+        })
+        .begin();
+
+      await Promise.resolve(started);
+
+      if (typeof webgazer.saveDataAcrossSessions === "function") {
+        webgazer.saveDataAcrossSessions(false);
       }
 
-      if (typeof controller.saveDataAcrossSessions === "function") {
-        controller = controller.saveDataAcrossSessions(false);
+      if (typeof webgazer.applyKalmanFilter === "function") {
+        webgazer.applyKalmanFilter(true);
       }
 
-      if (typeof controller.applyKalmanFilter === "function") {
-        controller = controller.applyKalmanFilter(true);
+      if (typeof webgazer.showVideo === "function") {
+        webgazer.showVideo(false);
       }
 
-      if (typeof controller.showVideo === "function") {
-        controller = controller.showVideo(false);
+      if (typeof webgazer.showFaceOverlay === "function") {
+        webgazer.showFaceOverlay(false);
       }
 
-      if (typeof controller.showFaceOverlay === "function") {
-        controller = controller.showFaceOverlay(false);
+      if (typeof webgazer.showFaceFeedbackBox === "function") {
+        webgazer.showFaceFeedbackBox(false);
       }
 
-      if (typeof controller.showFaceFeedbackBox === "function") {
-        controller = controller.showFaceFeedbackBox(false);
+      if (typeof webgazer.showPredictionPoints === "function") {
+        webgazer.showPredictionPoints(false);
       }
 
-      if (typeof controller.showPredictionPoints === "function") {
-        controller = controller.showPredictionPoints(false);
-      }
-
-      await Promise.resolve(controller.begin());
       this.initialized = true;
       this.setStatus("webcam active");
     } catch (error) {
