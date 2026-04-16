@@ -420,7 +420,7 @@ h3 {
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: var(--stimulus-frame-ratio, 4 / 5);
   padding: 14px;
   overflow: hidden;
   border-radius: 18px;

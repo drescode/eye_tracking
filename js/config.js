@@ -226,6 +226,7 @@ export const STUDY_CONFIG = {
       id: "stimulus-5",
       title: "Stimulus Page 5",
       imageSetId: "set-05",
+      frameAspectRatio: "2 / 5",
       headline: "Scarcity framing and final choice",
       prompt:
         "Review the final image set and select the option most likely to trigger a purchase choice.",

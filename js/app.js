@@ -1,4 +1,4 @@
-import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416k";
+import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416m";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -27,15 +27,15 @@ import {
   updateConsent,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260416k";
-import { WebgazerController } from "./webgazer-controller.js?v=20260416k";
-import { CalibrationSequence } from "./calibration.js?v=20260416k";
-import { HeatmapRenderer } from "./heatmap.js?v=20260416k";
+} from "./data-store.js?v=20260416m";
+import { WebgazerController } from "./webgazer-controller.js?v=20260416m";
+import { CalibrationSequence } from "./calibration.js?v=20260416m";
+import { HeatmapRenderer } from "./heatmap.js?v=20260416m";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260416k";
+} from "./supabase-store.js?v=20260416m";
 
 const query = new URLSearchParams(window.location.search);
 const state = {
@@ -558,8 +558,6 @@ function buildStimulusCard(option, selectedId, disabled = false) {
         <img
           src="${escapeHtml(option.image)}"
           alt="${escapeHtml(option.title)}"
-          width="800"
-          height="1000"
           loading="eager"
         />
       </div>
@@ -689,7 +687,11 @@ function renderStimulus(previewMode = false) {
 
   app.innerHTML = `
     <section class="study-frame">
-      <div id="stimulus-stage" class="stimulus-stage">
+      <div
+        id="stimulus-stage"
+        class="stimulus-stage"
+        style="--stimulus-frame-ratio: ${escapeHtml(page.frameAspectRatio || "4 / 5")};"
+      >
         <div class="stimulus-stage__header">
           <div class="stimulus-stage__meta">
             <p class="stage-kicker">${previewMode ? "Admin Preview" : escapeHtml(page.title)}</p>
