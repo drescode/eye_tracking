@@ -25,11 +25,23 @@ export class WebgazerController {
     const webgazer = window.webgazer;
 
     try {
+      let controller = webgazer;
+
+      // Force the older tracker stack documented by WebGazer because the
+      // default tracker path can fail on hosted static deployments.
+      if (typeof controller.setTracker === "function") {
+        controller = controller.setTracker("clmtrackr");
+      }
+
+      if (typeof controller.setRegression === "function") {
+        controller = controller.setRegression("ridge");
+      }
+
       if (typeof webgazer.setGazeListener !== "function") {
         throw new Error("WebGazer is loaded but the gaze listener API is unavailable.");
       }
 
-      const started = webgazer
+      const started = controller
         .setGazeListener((data, elapsedTime) => {
           this.handleGazeSample(data, elapsedTime);
         })
