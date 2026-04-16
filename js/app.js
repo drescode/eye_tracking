@@ -159,10 +159,6 @@ function handleTrackingError(error) {
     : "";
   const message = `${baseMessage}${browserHint}`;
   console.error("WebGazer startup error:", error);
-  state.session = markTrackingDenied(state.session, message);
-  setAlert(
-    `${message} Camera access is required for this prototype, so participation cannot continue.`,
-  );
   statusEl.className = "status-pill status-pill--danger";
   statusEl.textContent = "tracking unavailable";
 }

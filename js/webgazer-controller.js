@@ -40,29 +40,28 @@ export class WebgazerController {
     }
 
     const webgazer = window.webgazer;
+    let phase = "preflight";
 
     try {
-      let controller = webgazer;
-
-      // Force the older tracker stack documented by WebGazer because the
-      // default tracker path can fail on hosted static deployments.
-      if (typeof controller.setTracker === "function") {
-        controller = controller.setTracker("clmtrackr");
+      if (
+        typeof webgazer.detectCompatibility === "function" &&
+        webgazer.detectCompatibility() === false
+      ) {
+        throw new Error("This browser does not meet WebGazer's compatibility requirements.");
       }
 
-      if (typeof controller.setRegression === "function") {
-        controller = controller.setRegression("ridge");
-      }
-
-      if (typeof controller.setGazeListener !== "function") {
+      if (typeof webgazer.setGazeListener !== "function") {
         throw new Error("WebGazer is loaded but the gaze listener API is unavailable.");
       }
 
-      if (typeof controller.begin !== "function") {
+      if (typeof webgazer.begin !== "function") {
         throw new Error("WebGazer loaded, but begin() is unavailable.");
       }
 
-      const started = controller
+      phase = "begin";
+      const started = webgazer
+        .setTracker("clmtrackr")
+        .setRegression("ridge")
         .setGazeListener((data, elapsedTime) => {
           this.handleGazeSample(data, elapsedTime);
         })
@@ -70,6 +69,7 @@ export class WebgazerController {
 
       await Promise.resolve(started);
 
+      phase = "post-start configuration";
       if (typeof webgazer.saveDataAcrossSessions === "function") {
         webgazer.saveDataAcrossSessions(false);
       }
@@ -97,8 +97,13 @@ export class WebgazerController {
       this.initialized = true;
       this.setStatus("webcam active");
     } catch (error) {
-      this.onError(error);
-      throw error;
+      const message = error instanceof Error ? error.message : String(error);
+      const enhancedError = new Error(
+        `WebGazer initialization failed during ${phase}: ${message}`,
+      );
+      enhancedError.cause = error;
+      this.onError(enhancedError);
+      throw enhancedError;
     }
   }
 
