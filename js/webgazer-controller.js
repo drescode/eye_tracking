@@ -98,23 +98,8 @@ export class WebgazerController {
         webgazer.applyKalmanFilter(true);
       }
 
-      if (typeof webgazer.showVideo === "function") {
-        webgazer.showVideo(false);
-      }
-
-      if (typeof webgazer.showFaceOverlay === "function") {
-        webgazer.showFaceOverlay(false);
-      }
-
-      if (typeof webgazer.showFaceFeedbackBox === "function") {
-        webgazer.showFaceFeedbackBox(false);
-      }
-
-      if (typeof webgazer.showPredictionPoints === "function") {
-        webgazer.showPredictionPoints(false);
-      }
-
       this.initialized = true;
+      this.updateWebgazerVisibility();
       this.startPredictionPolling(webgazer);
       this.setStatus("webcam active");
     } catch (error) {
@@ -130,6 +115,31 @@ export class WebgazerController {
 
   setStatus(status) {
     this.onStatusChange(status);
+  }
+
+  updateWebgazerVisibility() {
+    const webgazer = window.webgazer;
+    if (!webgazer) {
+      return;
+    }
+
+    const showCalibrationAids = this.calibrating;
+
+    if (typeof webgazer.showVideo === "function") {
+      webgazer.showVideo(showCalibrationAids);
+    }
+
+    if (typeof webgazer.showFaceOverlay === "function") {
+      webgazer.showFaceOverlay(showCalibrationAids);
+    }
+
+    if (typeof webgazer.showFaceFeedbackBox === "function") {
+      webgazer.showFaceFeedbackBox(showCalibrationAids);
+    }
+
+    if (typeof webgazer.showPredictionPoints === "function") {
+      webgazer.showPredictionPoints(false);
+    }
   }
 
   startPredictionPolling(webgazer) {
@@ -175,6 +185,7 @@ export class WebgazerController {
 
   setCalibrationMode(enabled) {
     this.calibrating = enabled;
+    this.updateWebgazerVisibility();
     this.setStatus(enabled ? "calibrating" : this.pageId ? "tracking active" : "webcam active");
   }
 
