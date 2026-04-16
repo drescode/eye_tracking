@@ -5,18 +5,28 @@ export const STUDY_CONFIG = {
     "A browser-based neuromarketing prototype examining how design treatments influence visual attention and spending-related choice.",
   researcherLabel: "Academic Research Prototype",
   totalStimulusPages: 5,
+  remoteStorage: {
+    provider: "supabase",
+    autoSubmitOnDebrief: true,
+    supabase: {
+      enabled: true,
+      url: "https://dtxydeixqaedhetderdz.supabase.co",
+      anonKey: "sb_publishable_wumdLZUI9_5lMJi7Krkd5g_yPqeS6zj",
+      table: "participant_sessions",
+    },
+  },
   intro: {
     lead:
       "This study examines how visual design techniques may influence consumer attention and spending-related choice behavior during short product-viewing tasks.",
     studyInformation: [
       "You will view a series of pages containing three product-style images and answer one spending-choice question per page.",
       "The prototype uses webcam-based gaze estimation through WebGazer.js to estimate where attention appears to be directed on the screen.",
-      "No backend is used in this prototype. Session data remains in your browser unless you explicitly export it.",
+      "If remote submission is configured by the researcher, the structured study session can be transmitted automatically when you finish the study.",
     ],
     webcamNotice:
       "The study works best on a desktop or laptop with a webcam, stable lighting, and the participant seated relatively still in front of the display.",
     privacyNotice:
-      "This prototype records gaze predictions, timing information, click-based calibration activity, page selections, and browser/device metadata. Video frames are processed in the browser for gaze estimation and are not uploaded by this static prototype.",
+      "This prototype records gaze predictions, timing information, click-based calibration activity, page selections, and browser/device metadata. Video frames are processed in the browser for gaze estimation and are not uploaded. If researcher-side storage is enabled, the structured session record is submitted automatically when the study is completed.",
     consentCopy:
       "Participation is voluntary. You may stop at any time by closing the page or selecting decline before tracking begins.",
     declineMessage:
