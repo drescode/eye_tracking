@@ -18,6 +18,7 @@ export class WebgazerController {
     this.lastListenerSampleAt = 0;
     this.beginPerformanceNow = 0;
     this.predictionPollTimer = null;
+    this.hasSeenValidPrediction = false;
   }
 
   async initialize() {
@@ -61,9 +62,22 @@ export class WebgazerController {
         throw new Error("WebGazer loaded, but begin() is unavailable.");
       }
 
+      if (typeof webgazer.setCameraConstraints === "function") {
+        webgazer.setCameraConstraints({
+          audio: false,
+          video: {
+            facingMode: "user",
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 24, max: 30 },
+          },
+        });
+      }
+
       phase = "begin";
       this.beginPerformanceNow = performance.now();
       this.lastListenerSampleAt = 0;
+      this.hasSeenValidPrediction = false;
       const started = webgazer
         .setTracker("clmtrackr")
         .setRegression("ridge")
@@ -210,6 +224,7 @@ export class WebgazerController {
 
       this.latestPoint = payload;
       this.lastValidAt = now;
+      this.hasSeenValidPrediction = true;
 
       if (!this.calibrating) {
         this.setStatus(this.pageId ? "tracking active" : "webcam active");
@@ -223,8 +238,13 @@ export class WebgazerController {
       return;
     }
 
-    if (!this.calibrating && now - this.lastValidAt > this.missingFaceTimeoutMs) {
-      this.setStatus(this.pageId ? "face not detected" : "webcam active");
+    if (
+      !this.calibrating &&
+      this.pageId &&
+      this.hasSeenValidPrediction &&
+      now - this.lastValidAt > this.missingFaceTimeoutMs
+    ) {
+      this.setStatus("tracking unstable");
     }
 
     if (shouldEmit && this.pageId) {

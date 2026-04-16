@@ -1,4 +1,4 @@
-import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416j";
+import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416k";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -27,15 +27,15 @@ import {
   updateConsent,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260416j";
-import { WebgazerController } from "./webgazer-controller.js?v=20260416j";
-import { CalibrationSequence } from "./calibration.js?v=20260416j";
-import { HeatmapRenderer } from "./heatmap.js?v=20260416j";
+} from "./data-store.js?v=20260416k";
+import { WebgazerController } from "./webgazer-controller.js?v=20260416k";
+import { CalibrationSequence } from "./calibration.js?v=20260416k";
+import { HeatmapRenderer } from "./heatmap.js?v=20260416k";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260416j";
+} from "./supabase-store.js?v=20260416k";
 
 const query = new URLSearchParams(window.location.search);
 const state = {
@@ -151,7 +151,7 @@ function handleTrackingStatus(status) {
   const className =
     status === "tracking active" || status === "webcam active"
       ? "status-pill status-pill--active"
-      : status === "calibrating" || status === "face not detected"
+      : status === "calibrating" || status === "face not detected" || status === "tracking unstable"
         ? "status-pill status-pill--warning"
         : "status-pill status-pill--idle";
 

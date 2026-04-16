@@ -58,9 +58,9 @@ export const STUDY_CONFIG = {
     ],
   },
   tracking: {
-    sampleIntervalMs: 50,
+    sampleIntervalMs: 75,
     smoothingFactor: 0.32,
-    missingFaceTimeoutMs: 1600,
+    missingFaceTimeoutMs: 3500,
   },
   stimulus: {
     questionPrompt: "Which option are you most likely to buy?",
