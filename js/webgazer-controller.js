@@ -123,18 +123,18 @@ export class WebgazerController {
       return;
     }
 
-    const showCalibrationAids = this.calibrating;
+    const showPreview = this.initialized || this.calibrating || Boolean(this.pageId);
 
     if (typeof webgazer.showVideo === "function") {
-      webgazer.showVideo(showCalibrationAids);
+      webgazer.showVideo(showPreview);
     }
 
     if (typeof webgazer.showFaceOverlay === "function") {
-      webgazer.showFaceOverlay(showCalibrationAids);
+      webgazer.showFaceOverlay(showPreview);
     }
 
     if (typeof webgazer.showFaceFeedbackBox === "function") {
-      webgazer.showFaceFeedbackBox(showCalibrationAids);
+      webgazer.showFaceFeedbackBox(showPreview);
     }
 
     if (typeof webgazer.showPredictionPoints === "function") {
