@@ -1,4 +1,4 @@
-import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416p";
+import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416q";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -27,15 +27,15 @@ import {
   updateConsent,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260416p";
-import { WebgazerController } from "./webgazer-controller.js?v=20260416p";
-import { CalibrationSequence } from "./calibration.js?v=20260416p";
-import { HeatmapRenderer } from "./heatmap.js?v=20260416p";
+} from "./data-store.js?v=20260416q";
+import { WebgazerController } from "./webgazer-controller.js?v=20260416q";
+import { CalibrationSequence } from "./calibration.js?v=20260416q";
+import { HeatmapRenderer } from "./heatmap.js?v=20260416q";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260416p";
+} from "./supabase-store.js?v=20260416q";
 
 const query = new URLSearchParams(window.location.search);
 const state = {
@@ -541,6 +541,10 @@ function renderCalibration() {
       <div id="calibration-root" class="calibration-layout"></div>
     </section>
   `;
+
+  if (window.webgazer?.clearData) {
+    window.webgazer.clearData();
+  }
 
   webgazerController.setCalibrationMode(true);
 

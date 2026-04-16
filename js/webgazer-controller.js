@@ -15,7 +15,6 @@ export class WebgazerController {
     this.lastValidAt = 0;
     this.lastSmoothedPoint = null;
     this.latestPoint = null;
-    this.lastListenerSampleAt = 0;
     this.beginPerformanceNow = 0;
     this.predictionPollTimer = null;
     this.hasSeenValidPrediction = false;
@@ -51,11 +50,9 @@ export class WebgazerController {
         typeof webgazer.detectCompatibility === "function" &&
         webgazer.detectCompatibility() === false
       ) {
-        throw new Error("This browser does not meet WebGazer's compatibility requirements.");
-      }
-
-      if (typeof webgazer.setGazeListener !== "function") {
-        throw new Error("WebGazer is loaded but the gaze listener API is unavailable.");
+        throw new Error(
+          "This browser does not meet WebGazer's compatibility requirements.",
+        );
       }
 
       if (typeof webgazer.begin !== "function") {
@@ -74,22 +71,45 @@ export class WebgazerController {
         });
       }
 
-      phase = "begin";
-      this.beginPerformanceNow = performance.now();
-      this.lastListenerSampleAt = 0;
-      this.hasSeenValidPrediction = false;
-      const started = webgazer
-        .setTracker("clmtrackr")
-        .setRegression("ridge")
-        .setGazeListener((data, elapsedTime) => {
-          this.lastListenerSampleAt = Date.now();
-          this.handleGazeSample(data, elapsedTime);
-        })
-        .begin();
+      if (typeof webgazer.clearData === "function") {
+        webgazer.clearData();
+      }
 
-      await Promise.resolve(started);
+      phase = "begin";
+      await new Promise((resolve, reject) => {
+        let settled = false;
+
+        const finish = (error) => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        };
+
+        try {
+          webgazer.begin((error) => finish(error || null));
+        } catch (error) {
+          finish(error);
+          return;
+        }
+
+        window.setTimeout(() => finish(null), 4500);
+      });
 
       phase = "post-start configuration";
+      if (typeof webgazer.setRegression === "function") {
+        try {
+          webgazer.setRegression("threadedRidge");
+        } catch (_error) {
+          webgazer.setRegression("ridge");
+        }
+      }
+
       if (typeof webgazer.saveDataAcrossSessions === "function") {
         webgazer.saveDataAcrossSessions(false);
       }
@@ -99,8 +119,11 @@ export class WebgazerController {
       }
 
       this.initialized = true;
+      this.beginPerformanceNow = performance.now();
+      this.lastValidAt = 0;
+      this.hasSeenValidPrediction = false;
       this.updateWebgazerVisibility();
-      this.startPredictionPolling(webgazer);
+      this.startPredictionPolling();
       this.setStatus("webcam active");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -163,36 +186,27 @@ export class WebgazerController {
     }
   }
 
-  startPredictionPolling(webgazer) {
+  startPredictionPolling() {
     this.stopPredictionPolling();
 
-    if (typeof webgazer?.getCurrentPrediction !== "function") {
+    const webgazer = window.webgazer;
+    if (!webgazer || typeof webgazer.getCurrentPrediction !== "function") {
       return;
     }
 
-    const quietWindowMs = Math.max(250, this.sampleIntervalMs * 3);
-    this.predictionPollTimer = window.setInterval(async () => {
+    this.predictionPollTimer = window.setInterval(() => {
       if (!this.initialized) {
         return;
       }
 
-      if (
-        this.lastListenerSampleAt &&
-        Date.now() - this.lastListenerSampleAt < quietWindowMs
-      ) {
-        return;
-      }
-
       try {
-        const prediction = await Promise.resolve(
-          webgazer.getCurrentPrediction(),
-        );
+        const prediction = webgazer.getCurrentPrediction();
         const elapsedTimeMs = Math.round(
           performance.now() - this.beginPerformanceNow,
         );
         this.handleGazeSample(prediction, elapsedTimeMs);
       } catch (_error) {
-        // Ignore polling failures and keep the listener path active.
+        // Keep polling even if one prediction request fails.
       }
     }, this.sampleIntervalMs);
   }
@@ -207,13 +221,24 @@ export class WebgazerController {
   setCalibrationMode(enabled) {
     this.calibrating = enabled;
     this.updateWebgazerVisibility();
-    this.setStatus(enabled ? "calibrating" : this.pageId ? "tracking active" : "webcam active");
+    this.setStatus(
+      enabled
+        ? "calibrating"
+        : this.pageId
+          ? "tracking active"
+          : "webcam active",
+    );
   }
 
   setPageContext(pageId, getBounds) {
     this.pageId = pageId;
     this.pageBoundsGetter = getBounds || null;
     this.lastSmoothedPoint = null;
+    this.updateWebgazerVisibility();
+
+    if (window.webgazer && typeof window.webgazer.resume === "function") {
+      window.webgazer.resume();
+    }
   }
 
   clearPageContext() {
@@ -221,6 +246,8 @@ export class WebgazerController {
     this.pageBoundsGetter = null;
     this.latestPoint = null;
     this.lastSmoothedPoint = null;
+    this.updateWebgazerVisibility();
+
     if (!this.calibrating) {
       this.setStatus(this.initialized ? "webcam active" : "awaiting consent");
     }
@@ -262,7 +289,7 @@ export class WebgazerController {
         this.setStatus(this.pageId ? "tracking active" : "webcam active");
       }
 
-      if (shouldEmit) {
+      if (shouldEmit && this.pageId) {
         this.lastEmitAt = now;
         this.onSample(payload);
       }
@@ -353,14 +380,18 @@ export class WebgazerController {
   }
 
   async stop() {
-    if (!window.webgazer) {
+    const webgazer = window.webgazer;
+    if (!webgazer) {
       return;
     }
 
     try {
       this.stopPredictionPolling();
-      if (typeof window.webgazer.end === "function") {
-        await window.webgazer.end();
+      if (typeof webgazer.pause === "function") {
+        webgazer.pause();
+      }
+      if (typeof webgazer.end === "function") {
+        webgazer.end();
       }
     } catch (error) {
       this.onError(error);
