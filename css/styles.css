@@ -402,12 +402,14 @@ h3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 22px;
   margin-bottom: 28px;
+  align-items: start;
 }
 
 .stimulus-card {
   position: relative;
   display: grid;
   grid-template-rows: auto auto;
+  align-content: start;
   padding: 16px;
   border-radius: 22px;
   border: 1px solid var(--line);
@@ -415,22 +417,23 @@ h3 {
 }
 
 .stimulus-card__figure {
-  display: grid;
-  place-items: center;
-  min-height: 420px;
-  padding: 12px;
-  overflow: hidden;
-  border-radius: 16px;
-  border: 1px solid var(--line);
-  background: #fff;
+  display: block;
+  min-height: 0;
+  padding: 0;
+  overflow: visible;
+  border-radius: 0;
+  border: none;
+  background: transparent;
 }
 
 .stimulus-card__figure img {
+  display: block;
   width: 100%;
   height: auto;
-  max-height: min(62vh, 560px);
-  object-fit: contain;
-  object-position: center;
+  max-height: none;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
 }
 
 .choice-button {

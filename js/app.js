@@ -595,7 +595,6 @@ function renderStimulus(previewMode = false) {
           <div class="stimulus-stage__meta">
             <p class="stage-kicker">${previewMode ? "Admin Preview" : escapeHtml(page.title)}</p>
             <h2>${escapeHtml(page.headline)}</h2>
-            <p class="helper-text">${escapeHtml(page.prompt)}</p>
           </div>
           <div class="timing-chip">${escapeHtml(page.imageSetId)}</div>
         </div>
@@ -607,11 +606,8 @@ function renderStimulus(previewMode = false) {
         </div>
 
         <div class="question-block">
-          <span class="question-label">Spending-related choice</span>
-          <p><strong>${escapeHtml(page.question)}</strong></p>
-          <p class="helper-text">${escapeHtml(
-            STUDY_CONFIG.stimulus.timerMessage,
-          )}</p>
+          <span class="question-label">Selection Required</span>
+          <p><strong>Select one image to continue.</strong></p>
           <div class="timing-row">
             <span id="timer-label" class="timing-chip">
               ${
