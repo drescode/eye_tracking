@@ -32,14 +32,16 @@ export class CalibrationSequence {
             )
             .join("")}
         </div>
-        <div class="calibration-card">
-          <p class="question-label">${this.config.title}</p>
-          <h3>Follow the highlighted point</h3>
-          <p>${this.config.instructions}</p>
-          <p id="calibration-status" class="panel-muted">
-            Point 1 of ${this.points.length}. Click the highlighted target ${this.config.clicksPerPoint} times.
-          </p>
-        </div>
+      </div>
+      <div class="calibration-status-card">
+        <p class="question-label">Calibration Progress</p>
+        <h3>Follow the highlighted point</h3>
+        <p class="panel-muted">
+          Click each active target ${this.config.clicksPerPoint} times. All nine points must reach 3/3 before the study continues.
+        </p>
+        <p id="calibration-status" class="panel-muted">
+          Point 1 of ${this.points.length}. Click the highlighted target ${this.config.clicksPerPoint} times.
+        </p>
       </div>
     `;
 
