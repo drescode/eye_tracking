@@ -464,11 +464,6 @@ function buildStimulusCard(option, selectedId, disabled = false) {
           loading="eager"
         />
       </div>
-      <div class="stimulus-card__body">
-        <div class="stimulus-card__title">${escapeHtml(option.title)}</div>
-        <p class="stimulus-card__caption">${escapeHtml(option.caption)}</p>
-        <div class="stimulus-card__price">${escapeHtml(option.price)}</div>
-      </div>
       <button class="choice-button" type="button" ${disabled ? "disabled" : ""}>
         ${selected ? "Selected" : `Choose ${escapeHtml(option.label)}`}
       </button>
