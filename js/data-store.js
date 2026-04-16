@@ -41,6 +41,33 @@ function safeParse(raw, fallback) {
   }
 }
 
+function buildPersistableSession(session) {
+  return {
+    ...session,
+    pages: Object.fromEntries(
+      Object.entries(session.pages || {}).map(([pageId, page]) => [
+        pageId,
+        {
+          ...page,
+          // Keep browser storage compact so long studies do not exceed quota mid-run.
+          gazePoints: [],
+        },
+      ]),
+    ),
+  };
+}
+
+function persistSessionSnapshot(session) {
+  try {
+    localStorage.setItem(
+      STORAGE_KEYS.currentSession,
+      JSON.stringify(buildPersistableSession(session)),
+    );
+  } catch (error) {
+    console.warn("Session snapshot could not be written to localStorage.", error);
+  }
+}
+
 function ensureRemoteSubmissionShape(session, config) {
   session.remoteSubmission = {
     provider: config.remoteStorage?.provider || null,
@@ -101,7 +128,7 @@ export function createSession(config) {
 
 export function saveCurrentSession(session) {
   session.updatedAt = nowIso();
-  localStorage.setItem(STORAGE_KEYS.currentSession, JSON.stringify(session));
+  persistSessionSnapshot(session);
   return session;
 }
 
