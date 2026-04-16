@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <rect width="800" height="1000" fill="#ead9c5"/>
+  <rect x="72" y="82" width="656" height="836" rx="34" fill="#fff8ef" stroke="#9d7d61" stroke-width="6"/>
+  <text x="400" y="430" fill="#6b432b" font-family="Georgia, serif" font-size="54" text-anchor="middle">Stimulus 1A</text>
+  <text x="400" y="505" fill="#875a38" font-family="Arial, sans-serif" font-size="30" text-anchor="middle">Minimal Serif Packaging</text>
+</svg>

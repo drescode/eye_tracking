@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <rect width="800" height="1000" fill="#d5ddd5"/>
+  <rect x="86" y="132" width="628" height="174" rx="24" fill="#46614a"/>
+  <rect x="86" y="368" width="628" height="434" rx="24" fill="#f7faf6"/>
+  <text x="400" y="238" fill="#fff" font-family="Arial, sans-serif" font-size="44" text-anchor="middle">Offer-First</text>
+  <text x="400" y="590" fill="#46614a" font-family="Georgia, serif" font-size="52" text-anchor="middle">Stimulus 2C</text>
+</svg>

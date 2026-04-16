@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <rect width="800" height="1000" fill="#d9c4ad"/>
+  <rect x="108" y="118" width="584" height="268" rx="28" fill="#875a38"/>
+  <rect x="108" y="440" width="584" height="360" rx="28" fill="#fff6ec"/>
+  <text x="400" y="280" fill="#fff" font-family="Arial, sans-serif" font-size="48" text-anchor="middle">Value Signal</text>
+  <text x="400" y="592" fill="#6b432b" font-family="Georgia, serif" font-size="52" text-anchor="middle">Stimulus 1C</text>
+</svg>

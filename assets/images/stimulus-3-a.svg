@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <rect width="800" height="1000" fill="#dad7e8"/>
+  <circle cx="400" cy="394" r="196" fill="#f7f5fc"/>
+  <text x="400" y="394" fill="#5a527d" font-family="Georgia, serif" font-size="54" text-anchor="middle">Stimulus 3A</text>
+  <text x="400" y="470" fill="#6e6591" font-family="Arial, sans-serif" font-size="30" text-anchor="middle">Centered Hero Layout</text>
+</svg>

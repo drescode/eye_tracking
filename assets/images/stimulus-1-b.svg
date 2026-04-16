@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <rect width="800" height="1000" fill="#e6cdb3"/>
+  <circle cx="400" cy="320" r="170" fill="#f4e7d8"/>
+  <rect x="92" y="548" width="616" height="244" rx="34" fill="#fff7ef"/>
+  <text x="400" y="610" fill="#6b432b" font-family="Georgia, serif" font-size="52" text-anchor="middle">Stimulus 1B</text>
+  <text x="400" y="676" fill="#875a38" font-family="Arial, sans-serif" font-size="30" text-anchor="middle">Warm Lifestyle Framing</text>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <rect width="800" height="1000" fill="#d7dfd8"/>
+  <circle cx="400" cy="342" r="146" fill="#7fa58a"/>
+  <rect x="102" y="564" width="596" height="214" rx="28" fill="#f7faf6"/>
+  <text x="400" y="642" fill="#46614a" font-family="Georgia, serif" font-size="52" text-anchor="middle">Stimulus 2B</text>
+  <text x="400" y="706" fill="#5f7963" font-family="Arial, sans-serif" font-size="30" text-anchor="middle">Accent-Led Layout</text>
+</svg>

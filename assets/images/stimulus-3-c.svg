@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <rect width="800" height="1000" fill="#cfcde3"/>
+  <rect x="90" y="128" width="620" height="128" rx="20" fill="#5a527d"/>
+  <rect x="90" y="308" width="620" height="498" rx="20" fill="#f6f4fb"/>
+  <text x="400" y="208" fill="#fff" font-family="Arial, sans-serif" font-size="42" text-anchor="middle">Spec-Led Layout</text>
+  <text x="400" y="586" fill="#5a527d" font-family="Georgia, serif" font-size="52" text-anchor="middle">Stimulus 3C</text>
+</svg>

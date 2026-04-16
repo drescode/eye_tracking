@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <rect width="800" height="1000" fill="#d1d7cf"/>
+  <rect x="104" y="120" width="592" height="174" rx="24" fill="#46594a"/>
+  <rect x="104" y="356" width="592" height="414" rx="24" fill="#f7faf6"/>
+  <text x="400" y="224" fill="#fff" font-family="Arial, sans-serif" font-size="44" text-anchor="middle">Scarcity Banner</text>
+  <text x="400" y="590" fill="#46594a" font-family="Georgia, serif" font-size="52" text-anchor="middle">Stimulus 5B</text>
+</svg>
