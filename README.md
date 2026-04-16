@@ -113,14 +113,6 @@ To replace the placeholders:
 3. Keep exactly 3 options per stimulus page so the layout and tracking assumptions stay aligned.
 4. Prefer fixed dimensions or consistent aspect ratios to avoid layout shifts.
 
-## Changing the page count from 5 to 8
-
-Edit the `stimulusPages` array in [`js/config.js`](/Users/andre/Documents/New%20project/js/config.js).
-
-- To use 5 pages, keep 5 entries.
-- To expand to 6, 7, or 8 stimulus pages, add more entries with the same shape.
-- `TOTAL_STEPS` is computed from the array length, so the progress indicator updates automatically.
-- Each added page must still include exactly 3 options/images.
 
 ## Data captured
 
@@ -236,11 +228,4 @@ This prototype should be treated as a research or pilot tool, not as a substitut
 - Data remains client-side unless manually exported.
 - If camera permission is denied or WebGazer fails to initialize, the study does not proceed.
 
-## Future extension points
 
-The code is structured so a later backend integration can be added without changing the participant flow. Likely next steps:
-
-- upload exported JSON to Firebase or a custom API
-- push summary rows to Google Sheets
-- add researcher authentication for admin mode
-- synchronize aggregated datasets across devices
