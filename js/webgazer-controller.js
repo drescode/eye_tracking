@@ -22,6 +22,23 @@ export class WebgazerController {
       throw new Error("WebGazer.js failed to load.");
     }
 
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isSafari =
+      /Safari/i.test(ua) && !/Chrome|CriOS|Edg|OPR|Chromium/i.test(ua);
+
+    if (isIOS) {
+      throw new Error(
+        "This prototype currently works best on desktop Chrome or Edge. iPhone and iPad browsers are not supported reliably.",
+      );
+    }
+
+    if (isSafari) {
+      throw new Error(
+        "This prototype currently works best on desktop Chrome or Edge. Safari is not supported reliably for WebGazer.",
+      );
+    }
+
     const webgazer = window.webgazer;
 
     try {
@@ -37,8 +54,12 @@ export class WebgazerController {
         controller = controller.setRegression("ridge");
       }
 
-      if (typeof webgazer.setGazeListener !== "function") {
+      if (typeof controller.setGazeListener !== "function") {
         throw new Error("WebGazer is loaded but the gaze listener API is unavailable.");
+      }
+
+      if (typeof controller.begin !== "function") {
+        throw new Error("WebGazer loaded, but begin() is unavailable.");
       }
 
       const started = controller

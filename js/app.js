@@ -158,6 +158,7 @@ function handleTrackingError(error) {
     ? " Safari is less reliable for WebGazer; Chrome or Edge on desktop is recommended."
     : "";
   const message = `${baseMessage}${browserHint}`;
+  console.error("WebGazer startup error:", error);
   state.session = markTrackingDenied(state.session, message);
   setAlert(
     `${message} Camera access is required for this prototype, so participation cannot continue.`,
@@ -352,16 +353,25 @@ function renderIntro() {
       state.view = "calibration";
       render();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Camera permission was denied or WebGazer could not initialize.";
+      console.error("Study startup failed:", error);
+      let message = "Study startup failed.";
+
+      if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError") {
+        message = "Camera access was denied. Please allow webcam permission and reload.";
+      } else if (error?.name === "NotFoundError") {
+        message = "No webcam was found on this device.";
+      } else if (error?.name === "NotReadableError") {
+        message = "The webcam is busy in another app or browser tab.";
+      } else if (error instanceof Error && error.message) {
+        message = error.message;
+      } else if (error) {
+        message = String(error);
+      }
+
       state.session = markTrackingDenied(state.session, message);
       continueButton.disabled = false;
       continueButton.textContent = STUDY_CONFIG.consent.continueLabel;
-      setAlert(
-        `${message} This study requires webcam permission and cannot continue without it.`,
-      );
+      setAlert(message);
       render();
     }
   });
