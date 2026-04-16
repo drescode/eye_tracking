@@ -119,26 +119,47 @@ export class WebgazerController {
 
   updateWebgazerVisibility() {
     const webgazer = window.webgazer;
-    if (!webgazer) {
-      return;
-    }
-
     const showPreview = this.initialized || this.calibrating || Boolean(this.pageId);
 
-    if (typeof webgazer.showVideo === "function") {
+    if (webgazer && typeof webgazer.showVideo === "function") {
       webgazer.showVideo(showPreview);
     }
 
-    if (typeof webgazer.showFaceOverlay === "function") {
+    if (webgazer && typeof webgazer.showFaceOverlay === "function") {
       webgazer.showFaceOverlay(showPreview);
     }
 
-    if (typeof webgazer.showFaceFeedbackBox === "function") {
+    if (webgazer && typeof webgazer.showFaceFeedbackBox === "function") {
       webgazer.showFaceFeedbackBox(showPreview);
     }
 
-    if (typeof webgazer.showPredictionPoints === "function") {
+    if (webgazer && typeof webgazer.showPredictionPoints === "function") {
       webgazer.showPredictionPoints(false);
+    }
+
+    const videoFeed = document.getElementById("webgazerVideoFeed");
+    const videoCanvas = document.getElementById("webgazerVideoCanvas");
+
+    [videoFeed, videoCanvas].forEach((element) => {
+      if (!element) {
+        return;
+      }
+
+      element.style.display = showPreview ? "block" : "none";
+      element.style.position = "fixed";
+      element.style.right = "18px";
+      element.style.bottom = "18px";
+      element.style.width = "220px";
+      element.style.height = "auto";
+      element.style.maxWidth = "min(220px, calc(100vw - 36px))";
+      element.style.borderRadius = "12px";
+      element.style.zIndex = "40";
+      element.style.background = "#fffdfa";
+      element.style.boxShadow = "0 18px 36px rgba(51, 39, 25, 0.16)";
+    });
+
+    if (videoCanvas) {
+      videoCanvas.style.pointerEvents = "none";
     }
   }
 
