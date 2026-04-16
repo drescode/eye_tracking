@@ -1,4 +1,4 @@
-import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416m";
+import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416n";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -27,15 +27,15 @@ import {
   updateConsent,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260416m";
-import { WebgazerController } from "./webgazer-controller.js?v=20260416m";
-import { CalibrationSequence } from "./calibration.js?v=20260416m";
-import { HeatmapRenderer } from "./heatmap.js?v=20260416m";
+} from "./data-store.js?v=20260416n";
+import { WebgazerController } from "./webgazer-controller.js?v=20260416n";
+import { CalibrationSequence } from "./calibration.js?v=20260416n";
+import { HeatmapRenderer } from "./heatmap.js?v=20260416n";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260416m";
+} from "./supabase-store.js?v=20260416n";
 
 const query = new URLSearchParams(window.location.search);
 const state = {
@@ -53,6 +53,14 @@ const state = {
   gateTimer: null,
   gateRemainingMs: STUDY_CONFIG.stimulus.minimumViewingTimeMs,
   remoteSubmissionInFlight: false,
+  qualityCheckTimer: null,
+  qualityCheck: {
+    status: "idle",
+    startedAt: 0,
+    remainingMs: 0,
+    validSamples: 0,
+    invalidSamples: 0,
+  },
   debugRefreshTimer: null,
   debug: {
     showLiveDot: false,
@@ -120,7 +128,7 @@ function getStepData() {
     return { current: 1, label: "Introduction" };
   }
 
-  if (state.view === "calibration") {
+  if (state.view === "calibration" || state.view === "quality-check") {
     return { current: 2, label: "Calibration" };
   }
 
@@ -317,6 +325,11 @@ function scheduleDebugRefresh() {
 function clearGateTimer() {
   window.clearInterval(state.gateTimer);
   state.gateTimer = null;
+}
+
+function clearQualityCheckTimer() {
+  window.clearInterval(state.qualityCheckTimer);
+  state.qualityCheckTimer = null;
 }
 
 function preloadImages() {
@@ -538,14 +551,159 @@ function renderCalibration() {
     },
     onComplete: () => {
       state.session = completeCalibration(state.session);
-      webgazerController.setCalibrationMode(false);
       window.setTimeout(() => {
-        state.view = "stimulus";
-        state.stimulusIndex = 0;
+        state.view = "quality-check";
         render();
       }, 900);
     },
   });
+}
+
+function startTrackingQualityCheck() {
+  clearQualityCheckTimer();
+  state.qualityCheck = {
+    status: "running",
+    startedAt: Date.now(),
+    remainingMs: STUDY_CONFIG.tracking.qualityCheckDurationMs,
+    validSamples: 0,
+    invalidSamples: 0,
+  };
+
+  const stage = document.getElementById("quality-check-stage");
+  if (stage) {
+    webgazerController.setPageContext("__quality-check__", () =>
+      stage.getBoundingClientRect(),
+    );
+  }
+
+  state.qualityCheckTimer = window.setInterval(() => {
+    const elapsed = Date.now() - state.qualityCheck.startedAt;
+    state.qualityCheck.remainingMs = Math.max(
+      0,
+      STUDY_CONFIG.tracking.qualityCheckDurationMs - elapsed,
+    );
+
+    const remainingEl = document.getElementById("quality-check-remaining");
+    if (remainingEl) {
+      remainingEl.textContent =
+        state.qualityCheck.remainingMs > 0
+          ? `${(state.qualityCheck.remainingMs / 1000).toFixed(1)}s remaining`
+          : "Checking complete";
+    }
+
+    const validEl = document.getElementById("quality-check-valid");
+    if (validEl) {
+      validEl.textContent = String(state.qualityCheck.validSamples);
+    }
+
+    const invalidEl = document.getElementById("quality-check-invalid");
+    if (invalidEl) {
+      invalidEl.textContent = String(state.qualityCheck.invalidSamples);
+    }
+
+    if (state.qualityCheck.remainingMs > 0) {
+      return;
+    }
+
+    clearQualityCheckTimer();
+    const passed =
+      state.qualityCheck.validSamples >=
+      STUDY_CONFIG.tracking.minimumValidSamplesForStudy;
+
+    if (passed) {
+      state.qualityCheck.status = "passed";
+      webgazerController.setCalibrationMode(false);
+      webgazerController.clearPageContext();
+      state.view = "stimulus";
+      state.stimulusIndex = 0;
+      render();
+      return;
+    }
+
+    state.qualityCheck.status = "failed";
+    render();
+  }, 100);
+}
+
+function renderTrackingQualityCheck() {
+  const threshold = STUDY_CONFIG.tracking.minimumValidSamplesForStudy;
+  const failed = state.qualityCheck.status === "failed";
+
+  app.innerHTML = `
+    <section class="study-frame">
+      <article class="hero-card stack">
+        <div>
+          <p class="eyebrow">Tracking Check</p>
+          <h2>Confirming webcam tracking quality</h2>
+          <p class="lead">
+            Keep your face centered, look at the screen naturally, and stay relatively still for a few seconds.
+          </p>
+        </div>
+        <div class="metric-grid">
+          <div class="metric">
+            <span class="panel-muted">Valid samples</span>
+            <strong id="quality-check-valid">${state.qualityCheck.validSamples}</strong>
+          </div>
+          <div class="metric">
+            <span class="panel-muted">Invalid samples</span>
+            <strong id="quality-check-invalid">${state.qualityCheck.invalidSamples}</strong>
+          </div>
+          <div class="metric">
+            <span class="panel-muted">Progress</span>
+            <strong id="quality-check-remaining">${
+              failed
+                ? "Check failed"
+                : `${(state.qualityCheck.remainingMs / 1000).toFixed(1)}s remaining`
+            }</strong>
+          </div>
+        </div>
+        <div class="notice-card">
+          <p>
+            The study will only continue after at least ${threshold} valid gaze samples are detected.
+          </p>
+          ${
+            failed
+              ? `<p><strong>Tracking quality is still too weak to continue.</strong> Improve lighting, keep your face centered in the webcam, and retry.</p>`
+              : `<p>Webcam feedback remains visible here so you can adjust your position before the first stimulus page.</p>`
+          }
+        </div>
+      </article>
+
+      <div id="quality-check-stage" class="calibration-stage"></div>
+
+      ${
+        failed
+          ? `
+            <div class="button-row">
+              <button id="retry-quality-check" class="button" type="button">Retry tracking check</button>
+              <button id="restart-calibration" class="ghost-button" type="button">Run calibration again</button>
+            </div>
+          `
+          : ""
+      }
+    </section>
+  `;
+
+  if (state.qualityCheck.status === "idle") {
+    startTrackingQualityCheck();
+  } else if (state.qualityCheck.status === "failed") {
+    webgazerController.clearPageContext();
+    document
+      .getElementById("retry-quality-check")
+      ?.addEventListener("click", () => {
+        state.qualityCheck.status = "idle";
+        state.qualityCheck.remainingMs = STUDY_CONFIG.tracking.qualityCheckDurationMs;
+        render();
+      });
+
+    document
+      .getElementById("restart-calibration")
+      ?.addEventListener("click", () => {
+        state.qualityCheck.status = "idle";
+        state.view = "calibration";
+        render();
+      });
+  }
 }
 
 function buildStimulusCard(option, selectedId, disabled = false) {
@@ -1223,6 +1381,15 @@ function handleGazeSample(sample) {
     return;
   }
 
+  if (sample.pageId === "__quality-check__") {
+    if (sample.valid) {
+      state.qualityCheck.validSamples += 1;
+    } else {
+      state.qualityCheck.invalidSamples += 1;
+    }
+    return;
+  }
+
   state.session = appendGazePoint(state.session, sample.pageId, sample);
 
   if (state.adminMode && state.view !== "final") {
@@ -1240,6 +1407,8 @@ function render() {
     renderDeclined();
   } else if (state.view === "calibration") {
     renderCalibration();
+  } else if (state.view === "quality-check") {
+    renderTrackingQualityCheck();
   } else if (state.view === "stimulus") {
     renderStimulus(false);
   } else if (state.view === "preview") {
@@ -1254,6 +1423,7 @@ function render() {
 
 window.addEventListener("beforeunload", () => {
   clearGateTimer();
+  clearQualityCheckTimer();
   window.clearInterval(state.debugRefreshTimer);
 });
 

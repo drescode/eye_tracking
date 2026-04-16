@@ -61,6 +61,8 @@ export const STUDY_CONFIG = {
     sampleIntervalMs: 75,
     smoothingFactor: 0.32,
     missingFaceTimeoutMs: 3500,
+    qualityCheckDurationMs: 3000,
+    minimumValidSamplesForStudy: 8,
   },
   stimulus: {
     questionPrompt: "Which option are you most likely to buy?",
