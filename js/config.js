@@ -664,9 +664,9 @@ export const STUDY_CONFIG = {
   stimulusInstructions: {
     title: "Before the product pages begin",
     copy:
-      "On each product page, you will be expected to look at the images for 8 seconds before the selection prompt appears.",
+      "On each product page, you will be expected to look at the images for 8 seconds before selection becomes available on the page.",
     reminder:
-      "Please use the full viewing period to inspect the images naturally. After 8 seconds, a popup will ask you to choose the option you would select.",
+      "Please use the full viewing period to inspect the images naturally. After 8 seconds, you can choose directly from the page and continue.",
     buttonLabel: "Continue to tracking check",
   },
   debrief: {

@@ -928,7 +928,7 @@ function renderStimulusInstructions() {
         <div class="notice-card">
           <p><strong>Viewing period:</strong> Each stimulus page will remain on screen for ${Math.round(
             STUDY_CONFIG.stimulus.minimumViewingTimeMs / 1000,
-          )} seconds before the selection popup appears.</p>
+          )} seconds before you can select directly from the page.</p>
         </div>
 
         <div class="button-row">

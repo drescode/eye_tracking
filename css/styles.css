@@ -818,6 +818,14 @@ h3 {
   padding-top: 8px;
 }
 
+.stimulus-stage__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
 .site-shell--study .stimulus-stage__footer {
   padding-top: 2px;
 }
