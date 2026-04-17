@@ -1279,6 +1279,9 @@ function handleNextStimulus() {
   state.session = markStudyCompleted(state.session);
   state.view = "final";
   webgazerController.stop();
+  if (STUDY_CONFIG.remoteStorage?.autoSubmitOnDebrief) {
+    void uploadSessionToSupabase();
+  }
   render();
 }
 
