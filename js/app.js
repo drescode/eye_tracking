@@ -1005,7 +1005,6 @@ function buildStimulusCard(option, selectedId, page) {
           loading="eager"
         />
       </div>
-      <div class="stimulus-card__marker" aria-hidden="true">${escapeHtml(option.label)}</div>
     </article>
   `;
 }
