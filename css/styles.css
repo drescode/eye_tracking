@@ -550,7 +550,7 @@ h3 {
 
 .study-frame--calibration {
   grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
-  align-items: stretch;
+  align-items: start;
 }
 
 .site-shell--study .study-frame {
@@ -562,7 +562,7 @@ h3 {
 }
 
 .study-frame--calibration > .hero-card {
-  height: 100%;
+  height: auto;
   align-content: start;
 }
 
@@ -957,12 +957,12 @@ h3 {
 }
 
 .study-frame--calibration .calibration-layout {
-  min-height: max(520px, calc(100vh - 210px));
+  min-height: clamp(420px, 58vh, 620px);
 }
 
 .calibration-stage {
   position: relative;
-  min-height: 680px;
+  min-height: clamp(420px, 58vh, 620px);
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background:
@@ -972,7 +972,7 @@ h3 {
 }
 
 .site-shell--study .calibration-stage {
-  min-height: 100%;
+  min-height: clamp(420px, 58vh, 620px);
 }
 
 .calibration-grid {
