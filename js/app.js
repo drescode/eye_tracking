@@ -2,7 +2,7 @@ import {
   STUDY_CONFIG,
   TOTAL_STEPS,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260417r";
+} from "./config.js?v=20260417s";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -947,8 +947,52 @@ function renderStimulusInstructions() {
   });
 }
 
-function buildStimulusCard(option, selectedId) {
+function buildStimulusCard(option, selectedId, page) {
   const selected = selectedId === option.id;
+  const useRetailCard = page?.cardTheme === "sixtysixty";
+
+  if (useRetailCard) {
+    return `
+      <article class="stimulus-card stimulus-card--retail ${selected ? "is-selected" : ""}" data-option-id="${escapeHtml(
+        option.id,
+      )}">
+        <div class="stimulus-card__figure stimulus-card__figure--retail">
+          <img
+            src="${escapeHtml(option.image)}"
+            alt="${escapeHtml(option.title)}"
+            loading="eager"
+          />
+        </div>
+        <div class="stimulus-card__details">
+          <div class="stimulus-card__product-block">
+            <h3 class="stimulus-card__product-name">${escapeHtml(option.productName || option.title)}</h3>
+            ${
+              option.sizeLabel
+                ? `<p class="stimulus-card__size">${escapeHtml(option.sizeLabel)}</p>`
+                : ""
+            }
+          </div>
+          ${
+            option.price
+              ? `<div class="stimulus-card__price">${escapeHtml(option.price)}</div>`
+              : ""
+          }
+          ${
+            option.retailerLabel
+              ? `<div class="stimulus-card__retailer">${escapeHtml(option.retailerLabel)}</div>`
+              : ""
+          }
+          <div
+            class="stimulus-card__cta"
+            style="background:${escapeHtml(option.accentColor || "#D71920")}; color:${escapeHtml(option.accentTextColor || "#ffffff")};"
+          >
+            ${escapeHtml(option.ctaLabel || "ADD TO CART")}
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
   return `
     <article class="stimulus-card ${selected ? "is-selected" : ""}" data-option-id="${escapeHtml(
       option.id,
@@ -1156,7 +1200,7 @@ function renderStimulus(previewMode = false) {
 
         <div class="stimulus-grid stimulus-grid--immersive">
           ${page.options
-            .map((option) => buildStimulusCard(option, selectedId))
+            .map((option) => buildStimulusCard(option, selectedId, page))
             .join("")}
         </div>
 

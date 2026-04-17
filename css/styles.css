@@ -692,6 +692,72 @@ h3 {
   color: #fff;
 }
 
+.stimulus-card--retail {
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.stimulus-card__figure--retail {
+  aspect-ratio: 4 / 3;
+  min-height: 0;
+  padding: 18px;
+  border-radius: 16px;
+}
+
+.stimulus-card__details {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.stimulus-card__product-block {
+  display: grid;
+  gap: 4px;
+}
+
+.stimulus-card__product-name {
+  margin: 0;
+  font-family: "Source Sans 3", sans-serif;
+  font-size: 1.35rem;
+  line-height: 1.18;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stimulus-card__size {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-soft);
+}
+
+.stimulus-card__price {
+  font-size: 2.05rem;
+  line-height: 1;
+  font-weight: 800;
+  color: #1b1f24;
+}
+
+.stimulus-card__retailer {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #009ca6;
+}
+
+.stimulus-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
 .question-block {
   display: grid;
   gap: 10px;
