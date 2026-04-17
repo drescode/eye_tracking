@@ -633,7 +633,7 @@ export const STUDY_CONFIG = {
   },
   stimulus: {
     questionPrompt: "Which option are you most likely to select?",
-    minimumViewingTimeMs: 5000,
+    minimumViewingTimeMs: 8000,
     requireSelectionToAdvance: true,
     allowAdvanceWithoutSelectionAfterMinimum: false,
     timerMessage:
