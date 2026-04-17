@@ -112,9 +112,12 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(2.7rem, 4.8vw, 4.9rem);
+  font-size: clamp(2.45rem, 4.25vw, 4.35rem);
   max-width: none;
   text-wrap: balance;
+  hyphens: none;
+  word-break: keep-all;
+  overflow-wrap: normal;
 }
 
 h2 {
@@ -521,12 +524,22 @@ h3 {
   gap: 18px;
 }
 
+.study-frame--calibration {
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  align-items: stretch;
+}
+
 .site-shell--study .study-frame {
   gap: 14px;
 }
 
 .site-shell--study .study-frame > .hero-card {
   padding: 22px 24px;
+}
+
+.study-frame--calibration > .hero-card {
+  height: 100%;
+  align-content: start;
 }
 
 .site-shell--study .study-frame .lead {
@@ -800,6 +813,10 @@ h3 {
   gap: 18px;
 }
 
+.study-frame--calibration .calibration-layout {
+  min-height: max(520px, calc(100vh - 210px));
+}
+
 .calibration-stage {
   position: relative;
   min-height: 680px;
@@ -812,7 +829,7 @@ h3 {
 }
 
 .site-shell--study .calibration-stage {
-  min-height: calc(100vh - 286px);
+  min-height: 100%;
 }
 
 .calibration-grid {
@@ -1025,6 +1042,10 @@ h3 {
   .hero-grid,
   .final-grid,
   .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .study-frame--calibration {
     grid-template-columns: 1fr;
   }
 

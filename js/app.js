@@ -721,7 +721,7 @@ function renderDeclined() {
 
 function renderCalibration() {
   app.innerHTML = `
-    <section class="study-frame">
+    <section class="study-frame study-frame--calibration">
       <article class="hero-card stack">
         <div>
           <p class="eyebrow">Calibration Step</p>
