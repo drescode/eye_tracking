@@ -1,3 +1,8 @@
+import {
+  buildStimulusPlan,
+  getStimulusPlan as resolveStimulusPlan,
+} from "./config.js?v=20260417c";
+
 const STORAGE_KEYS = {
   currentSession: "nm-study-current-session",
   importedSessions: "nm-study-imported-sessions",
@@ -84,11 +89,17 @@ function ensureRemoteSubmissionShape(session, config) {
 }
 
 export function createSession(config) {
+  const participantId = generateId();
+  const stimulusPlan = buildStimulusPlan(participantId);
+  const participantProfile = Object.fromEntries(
+    (config.participantProfile?.fields || []).map((field) => [field.id, ""]),
+  );
+
   return ensureRemoteSubmissionShape({
-    schemaVersion: 1,
+    schemaVersion: 2,
     studyId: config.studyId,
     studyTitle: config.studyTitle,
-    participantId: generateId(),
+    participantId,
     createdAt: nowIso(),
     updatedAt: nowIso(),
     status: "created",
@@ -98,6 +109,7 @@ export function createSession(config) {
       timestamp: null,
       declinedAt: null,
     },
+    participantProfile,
     tracking: {
       initializedAt: null,
       statusLog: [],
@@ -116,7 +128,8 @@ export function createSession(config) {
       completed: false,
       completedAt: null,
     },
-    stimulusOrder: config.stimulusPages.map((page) => page.id),
+    stimulusPlan,
+    stimulusOrder: stimulusPlan.map((page) => page.id),
     pages: {},
     exports: {
       lastJsonDownloadAt: null,
@@ -153,6 +166,14 @@ export function updateConsent(session, granted) {
   session.consent.granted = granted;
   session.consent.timestamp = granted ? nowIso() : null;
   session.consent.declinedAt = granted ? null : nowIso();
+  return saveCurrentSession(session);
+}
+
+export function updateParticipantProfile(session, fieldId, value) {
+  session.participantProfile = {
+    ...(session.participantProfile || {}),
+    [fieldId]: value,
+  };
   return saveCurrentSession(session);
 }
 
@@ -210,6 +231,11 @@ export function beginStimulusPage(session, page) {
     session.pages[page.id] = {
       pageId: page.id,
       pageTitle: page.title,
+      familyId: page.familyId || null,
+      familyLabel: page.familyLabel || null,
+      caseId: page.caseId || null,
+      caseTitle: page.caseTitle || null,
+      template: page.template || null,
       imageSetId: page.imageSetId,
       question: page.question,
       startedAt: null,
@@ -336,7 +362,10 @@ export function upsertImportedSessions(entries) {
 }
 
 export function getAllSessions(currentSession) {
-  const imported = getImportedSessions();
+  const imported = getImportedSessions().filter(
+    (session) =>
+      !currentSession?.studyId || session.studyId === currentSession.studyId,
+  );
   const sessions = imported.slice();
 
   if (currentSession?.participantId) {
@@ -363,7 +392,18 @@ export function buildSummaryCsv(session, config) {
     "participant_id",
     "study_id",
     "consent_timestamp",
+    "age_category",
+    "province",
+    "gender_identity",
+    "online_shopping_frequency",
+    "primary_shopping_device",
+    "retailer_familiarity",
     "page_id",
+    "family_id",
+    "family_label",
+    "case_id",
+    "case_title",
+    "template",
     "image_set_id",
     "selection",
     "selected_label",
@@ -372,13 +412,25 @@ export function buildSummaryCsv(session, config) {
     "invalid_sample_count",
   ];
 
-  const rows = config.stimulusPages.map((page) => {
+  const rows = resolveStimulusPlan(session, config).map((page) => {
     const record = session.pages[page.id] || {};
+    const profile = session.participantProfile || {};
     return [
       session.participantId,
       session.studyId,
       session.consent.timestamp || "",
+      profile.ageCategory || "",
+      profile.province || "",
+      profile.genderIdentity || "",
+      profile.onlineShoppingFrequency || "",
+      profile.primaryShoppingDevice || "",
+      profile.retailerFamiliarity || "",
       page.id,
+      page.familyId || "",
+      page.familyLabel || "",
+      page.caseId || "",
+      page.caseTitle || "",
+      page.template || "",
       page.imageSetId,
       record.selection || "",
       record.selectedLabel || "",
@@ -402,11 +454,17 @@ export function buildHeatmapExport(session, config) {
     {
       participantId: session.participantId,
       studyId: session.studyId,
+      participantProfile: session.participantProfile || {},
       exportedAt: nowIso(),
-      pages: config.stimulusPages.map((page) => {
+      pages: resolveStimulusPlan(session, config).map((page) => {
         const record = session.pages[page.id];
         return {
           pageId: page.id,
+          familyId: page.familyId || null,
+          familyLabel: page.familyLabel || null,
+          caseId: page.caseId || null,
+          caseTitle: page.caseTitle || null,
+          template: page.template || null,
           imageSetId: page.imageSetId,
           selection: record?.selection || null,
           timeOnPageMs: record?.timeOnPageMs || 0,
@@ -455,8 +513,22 @@ export function parseImportedJson(rawText) {
 
 export function computeAggregateStats(sessions, config) {
   const participantCount = sessions.filter((session) => session.consent?.granted).length;
+  const pageMap = new Map();
+  sessions.forEach((session) => {
+    resolveStimulusPlan(session, config).forEach((page) => {
+      if (!pageMap.has(page.id)) {
+        pageMap.set(page.id, page);
+      }
+    });
+  });
 
-  const perPage = config.stimulusPages.map((page) => {
+  if (!pageMap.size) {
+    resolveStimulusPlan(null, config).forEach((page) => {
+      pageMap.set(page.id, page);
+    });
+  }
+
+  const perPage = Array.from(pageMap.values()).map((page) => {
     const counts = new Map(page.options.map((option) => [option.id, 0]));
     const times = [];
 
@@ -493,6 +565,8 @@ export function computeAggregateStats(sessions, config) {
     return {
       pageId: page.id,
       pageTitle: page.title,
+      familyLabel: page.familyLabel || "",
+      caseId: page.caseId || "",
       participantResponses: times.length,
       averageTimeMs,
       topChoiceId,

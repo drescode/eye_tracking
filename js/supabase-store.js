@@ -1,4 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { getStimulusPlan } from "./config.js?v=20260417c";
 
 let cachedClient = null;
 let cachedConfigKey = "";
@@ -61,10 +62,15 @@ function getSupabaseClient(config) {
 }
 
 function buildPageSummary(session, config) {
-  return config.stimulusPages.map((page) => {
+  return getStimulusPlan(session, config).map((page) => {
     const record = session.pages?.[page.id] || {};
     return {
       page_id: page.id,
+      family_id: page.familyId || null,
+      family_label: page.familyLabel || null,
+      case_id: page.caseId || null,
+      case_title: page.caseTitle || null,
+      template: page.template || null,
       image_set_id: page.imageSetId,
       selection: record.selection || null,
       selected_label: record.selectedLabel || null,
@@ -77,13 +83,21 @@ function buildPageSummary(session, config) {
 
 export function buildSupabaseSubmission(config, session) {
   const pageSummary = buildPageSummary(session, config);
+  const participantProfile = session.participantProfile || {};
 
   return {
     participant_id: session.participantId,
     study_id: session.studyId,
     consent_timestamp: session.consent?.timestamp || null,
     completed_at: session.completedAt || null,
+    age_category: participantProfile.ageCategory || null,
+    province: participantProfile.province || null,
+    gender_identity: participantProfile.genderIdentity || null,
+    online_shopping_frequency: participantProfile.onlineShoppingFrequency || null,
+    primary_shopping_device: participantProfile.primaryShoppingDevice || null,
+    retailer_familiarity: participantProfile.retailerFamiliarity || null,
     submission_source: "github-pages",
+    participant_profile: participantProfile,
     device_info: session.deviceInfo || {},
     page_summary: pageSummary,
     total_valid_samples: pageSummary.reduce(

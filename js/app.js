@@ -1,4 +1,8 @@
-import { STUDY_CONFIG, TOTAL_STEPS } from "./config.js?v=20260416q";
+import {
+  STUDY_CONFIG,
+  TOTAL_STEPS,
+  getStimulusPlan as resolveStimulusPlan,
+} from "./config.js?v=20260417c";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -25,19 +29,22 @@ import {
   saveCurrentSession,
   updateCalibrationPoint,
   updateConsent,
+  updateParticipantProfile,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260416q";
-import { WebgazerController } from "./webgazer-controller.js?v=20260416q";
-import { CalibrationSequence } from "./calibration.js?v=20260416q";
-import { HeatmapRenderer } from "./heatmap.js?v=20260416q";
+} from "./data-store.js?v=20260417c";
+import { WebgazerController } from "./webgazer-controller.js?v=20260417c";
+import { CalibrationSequence } from "./calibration.js?v=20260417c";
+import { HeatmapRenderer } from "./heatmap.js?v=20260417c";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260416q";
+} from "./supabase-store.js?v=20260417c";
 
 const query = new URLSearchParams(window.location.search);
+const initialSession = loadCurrentSession(STUDY_CONFIG);
+const initialStimulusPlan = resolveStimulusPlan(initialSession, STUDY_CONFIG);
 const state = {
   adminMode: query.get("admin") === "1",
   view: "intro",
@@ -45,13 +52,15 @@ const state = {
   previewPageId: null,
   previewReturnView: "final",
   previewReturnStimulusIndex: 0,
-  session: loadCurrentSession(STUDY_CONFIG),
+  session: initialSession,
   importedSessions: getImportedSessions(),
   activeStimulusPageId: null,
   currentPageStartedAt: 0,
   currentSelection: null,
   gateTimer: null,
   gateRemainingMs: STUDY_CONFIG.stimulus.minimumViewingTimeMs,
+  selectionModalOpen: false,
+  stimulusViewingElapsedMs: 0,
   remoteSubmissionInFlight: false,
   qualityCheckTimer: null,
   qualityCheck: {
@@ -67,7 +76,7 @@ const state = {
     showRawPoints: false,
     heatmapMode: "none",
     selectedSessionId: "current",
-    selectedPageId: STUDY_CONFIG.stimulusPages[0].id,
+    selectedPageId: initialStimulusPlan[0]?.id || "",
   },
 };
 
@@ -80,6 +89,7 @@ const pageLabelEl = document.getElementById("page-label");
 const progressBarEl = document.getElementById("progress-bar");
 const statusEl = document.getElementById("tracking-status");
 const alertEl = document.getElementById("global-alert");
+const siteShellEl = document.querySelector(".site-shell");
 
 const heatmapRenderer = new HeatmapRenderer();
 const webgazerController = new WebgazerController({
@@ -140,7 +150,7 @@ function getStepData() {
   }
 
   if (state.view === "preview") {
-    const previewIndex = STUDY_CONFIG.stimulusPages.findIndex(
+    const previewIndex = getAvailableStimulusPages().findIndex(
       (page) => page.id === state.previewPageId,
     );
     return {
@@ -288,7 +298,41 @@ async function uploadSessionToSupabase(options = {}) {
 }
 
 function getCurrentStimulus() {
-  return STUDY_CONFIG.stimulusPages[state.stimulusIndex];
+  return getCurrentStimulusPlan()[state.stimulusIndex];
+}
+
+function getCurrentStimulusPlan() {
+  return resolveStimulusPlan(state.session, STUDY_CONFIG);
+}
+
+function getAvailableStimulusPages() {
+  const pages = new Map();
+
+  [state.session, ...state.importedSessions]
+    .filter((session) => !session?.studyId || session.studyId === STUDY_CONFIG.studyId)
+    .forEach((session) => {
+    resolveStimulusPlan(session, STUDY_CONFIG).forEach((page) => {
+      if (!pages.has(page.id)) {
+        pages.set(page.id, page);
+      }
+    });
+    });
+
+  if (!pages.size) {
+    resolveStimulusPlan(null, STUDY_CONFIG).forEach((page) => {
+      pages.set(page.id, page);
+    });
+  }
+
+  return Array.from(pages.values());
+}
+
+function getPageDefinitionById(pageId) {
+  return (
+    getAvailableStimulusPages().find((page) => page.id === pageId) ||
+    getCurrentStimulusPlan().find((page) => page.id === pageId) ||
+    null
+  );
 }
 
 function getSelectedSession() {
@@ -298,7 +342,9 @@ function getSelectedSession() {
 
   return (
     state.importedSessions.find(
-      (session) => session.participantId === state.debug.selectedSessionId,
+      (session) =>
+        session.studyId === STUDY_CONFIG.studyId &&
+        session.participantId === state.debug.selectedSessionId,
     ) || null
   );
 }
@@ -333,7 +379,7 @@ function clearQualityCheckTimer() {
 }
 
 function preloadImages() {
-  STUDY_CONFIG.stimulusPages.forEach((page) => {
+  getAvailableStimulusPages().forEach((page) => {
     page.options.forEach((option) => {
       const image = new Image();
       image.src = option.image;
@@ -363,55 +409,190 @@ async function waitForDependency(name, timeoutMs = 6000) {
   });
 }
 
+function ensureBrowserScript(src, globalName, timeoutMs = 15000) {
+  if (window[globalName]) {
+    return Promise.resolve(window[globalName]);
+  }
+
+  const existing = Array.from(document.scripts).find((script) =>
+    script.src.includes(src),
+  );
+
+  return new Promise((resolve, reject) => {
+    const startedAt = Date.now();
+
+    const finishIfReady = () => {
+      if (window[globalName]) {
+        resolve(window[globalName]);
+        return true;
+      }
+      return false;
+    };
+
+    if (finishIfReady()) {
+      return;
+    }
+
+    const script = existing || document.createElement("script");
+    if (!existing) {
+      script.src = src;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    const poll = window.setInterval(() => {
+      if (finishIfReady()) {
+        window.clearInterval(poll);
+        return;
+      }
+
+      if (Date.now() - startedAt > timeoutMs) {
+        window.clearInterval(poll);
+        reject(new Error(`${globalName} did not load in time.`));
+      }
+    }, 150);
+
+    script.addEventListener(
+      "error",
+      () => {
+        window.clearInterval(poll);
+        reject(new Error(`${globalName} failed to load from ${src}.`));
+      },
+      { once: true },
+    );
+  });
+}
+
 async function initializeTrackingAfterConsent() {
-  await waitForDependency("webgazer");
+  await ensureBrowserScript("./js/lib/webgazer.js?v=20260417c", "webgazer");
   await waitForDependency("h337");
   await webgazerController.initialize();
   state.session = markTrackingInitialized(state.session);
 }
 
+function getParticipantProfileFields() {
+  return STUDY_CONFIG.participantProfile?.fields || [];
+}
+
+function isParticipantProfileComplete(session) {
+  const profile = session.participantProfile || {};
+  return getParticipantProfileFields()
+    .filter((field) => field.required)
+    .every((field) => String(profile[field.id] || "").trim().length > 0);
+}
+
+function buildParticipantProfileField(field, value) {
+  if (field.type === "select") {
+    return `
+      <label class="profile-field">
+        <span class="profile-field__label">
+          ${escapeHtml(field.label)}
+          ${field.required ? '<span class="profile-field__required">Required</span>' : ""}
+        </span>
+        <select data-profile-field="${escapeHtml(field.id)}">
+          ${field.options
+            .map(
+              (option) => `
+                <option value="${escapeHtml(option)}" ${
+                  option === value ? "selected" : ""
+                }>
+                  ${escapeHtml(option || "Select an option")}
+                </option>
+              `,
+            )
+            .join("")}
+        </select>
+      </label>
+    `;
+  }
+
+  return `
+    <label class="profile-field">
+      <span class="profile-field__label">
+        ${escapeHtml(field.label)}
+        ${field.required ? '<span class="profile-field__required">Required</span>' : ""}
+      </span>
+      <input
+        type="text"
+        value="${escapeHtml(value || "")}"
+        data-profile-field="${escapeHtml(field.id)}"
+      />
+    </label>
+  `;
+}
+
 function renderIntro() {
   const intro = STUDY_CONFIG.intro;
+  const participantProfile = STUDY_CONFIG.participantProfile;
+  const profile = state.session.participantProfile || {};
+  const profileComplete = isParticipantProfileComplete(state.session);
   app.innerHTML = `
-    <section class="hero-grid">
-      <article class="hero-card stack">
+    <section class="intro-layout">
+      <article class="hero-card intro-hero stack">
         <div>
           <p class="eyebrow">${escapeHtml(STUDY_CONFIG.researcherLabel)}</p>
           <h2>${escapeHtml(STUDY_CONFIG.studyTitle)}</h2>
           <p class="lead">${escapeHtml(intro.lead)}</p>
         </div>
-        <div class="info-strip">
+        <div class="intro-steps">
           <div class="info-chip">
-            <strong>Desktop First</strong>
-            <span>${escapeHtml(intro.webcamNotice)}</span>
+            <strong>1. Profile</strong>
+            <span>Complete a short audience profile before consent.</span>
           </div>
           <div class="info-chip">
-            <strong>Tracking Method</strong>
-            <span>WebGazer.js estimates on-screen attention from a standard webcam.</span>
+            <strong>2. Consent and webcam</strong>
+            <span>Review the webcam notice and only continue if you agree.</span>
           </div>
           <div class="info-chip">
-            <strong>Storage</strong>
-            <span>Data remains in-browser unless you choose to export JSON or CSV.</span>
+            <strong>3. Calibrate and view</strong>
+            <span>Calibrate, review the product stimuli, then make your selections.</span>
           </div>
         </div>
-        <div class="notice-card">
-          <h3>Study Information</h3>
-          <ul class="list-block">
-            ${intro.studyInformation
-              .map((item) => `<li>${escapeHtml(item)}</li>`)
-              .join("")}
-          </ul>
+        <div class="intro-summary-grid">
+          <div class="notice-card">
+            <h3>What you will do</h3>
+            <ul class="list-block">
+              ${intro.studyInformation
+                .map((item) => `<li>${escapeHtml(item)}</li>`)
+                .join("")}
+            </ul>
+          </div>
+          <div class="notice-card">
+            <h3>Works best when</h3>
+            <p>${escapeHtml(intro.webcamNotice)}</p>
+            <p class="panel-muted">Stable lighting, a centered face, and minimal movement usually produce the best gaze data.</p>
+          </div>
         </div>
       </article>
 
-      <aside class="panel stack">
-        <div class="notice-card">
-          <h3>Webcam and Privacy Notice</h3>
-          <p>${escapeHtml(intro.privacyNotice)}</p>
-          <p>${escapeHtml(intro.consentCopy)}</p>
+      <aside class="panel intro-sidebar stack">
+        <div class="consent-box stack">
+          <div>
+            <p class="eyebrow">Before consent</p>
+            <h3>${escapeHtml(participantProfile.title)}</h3>
+            <p>${escapeHtml(participantProfile.intro)}</p>
+            <p class="panel-muted">${escapeHtml(participantProfile.helper)}</p>
+          </div>
+          <div class="profile-grid">
+            ${getParticipantProfileFields()
+              .map((field) => buildParticipantProfileField(field, profile[field.id] || ""))
+              .join("")}
+          </div>
+          <div class="profile-status ${profileComplete ? "profile-status--complete" : ""}">
+            ${
+              profileComplete
+                ? "Profile complete. You can now review consent and continue."
+                : "Please complete all required profile fields before continuing."
+            }
+          </div>
         </div>
 
         <div class="consent-box stack">
+          <div class="notice-card">
+            <h3>Webcam and Privacy Notice</h3>
+            <p>${escapeHtml(intro.privacyNotice)}</p>
+            <p>${escapeHtml(intro.consentCopy)}</p>
+          </div>
           <div class="consent-row">
             <input id="consent-checkbox" type="checkbox" />
             <label for="consent-checkbox">${escapeHtml(
@@ -430,7 +611,7 @@ function renderIntro() {
             </button>
           </div>
           <p class="panel-muted">
-            Participation only proceeds after explicit consent. WebGazer is not initialized before that point.
+            Participation only proceeds after the required profile fields are completed and explicit consent is given. WebGazer is not initialized before that point.
           </p>
         </div>
       </aside>
@@ -441,10 +622,26 @@ function renderIntro() {
   const continueButton = document.getElementById("continue-button");
   const declineButton = document.getElementById("decline-button");
   const newSessionButton = document.getElementById("new-session-button");
+  const profileInputs = Array.from(document.querySelectorAll("[data-profile-field]"));
 
-  checkbox.addEventListener("change", () => {
-    continueButton.disabled = !checkbox.checked;
+  const syncContinueState = () => {
+    continueButton.disabled = !checkbox.checked || !isParticipantProfileComplete(state.session);
+  };
+
+  profileInputs.forEach((input) => {
+    input.addEventListener("change", (event) => {
+      state.session = updateParticipantProfile(
+        state.session,
+        event.target.dataset.profileField,
+        event.target.value,
+      );
+      syncContinueState();
+      render();
+    });
   });
+
+  checkbox.addEventListener("change", syncContinueState);
+  syncContinueState();
 
   continueButton.addEventListener("click", async () => {
     continueButton.disabled = true;
@@ -453,6 +650,8 @@ function renderIntro() {
 
     if (state.session.status === "completed" || state.session.status === "declined") {
       state.session = resetCurrentSession(STUDY_CONFIG);
+      render();
+      return;
     }
 
     try {
@@ -710,7 +909,7 @@ function renderTrackingQualityCheck() {
   }
 }
 
-function buildStimulusCard(option, selectedId, disabled = false) {
+function buildStimulusCard(option, selectedId) {
   const selected = selectedId === option.id;
   return `
     <article class="stimulus-card ${selected ? "is-selected" : ""}" data-option-id="${escapeHtml(
@@ -723,10 +922,60 @@ function buildStimulusCard(option, selectedId, disabled = false) {
           loading="eager"
         />
       </div>
-      <button class="choice-button" type="button" ${disabled ? "disabled" : ""}>
-        ${selected ? "Selected" : `Choose ${escapeHtml(option.label)}`}
-      </button>
+      <div class="stimulus-card__marker" aria-hidden="true">${escapeHtml(option.label)}</div>
     </article>
+  `;
+}
+
+function buildStimulusSelectionModal(page, selectedId) {
+  return `
+    <div class="selection-modal-backdrop" data-selection-overlay>
+      <section
+        class="selection-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="selection-modal-title"
+      >
+        <p class="eyebrow">Selection Required</p>
+        <h3 id="selection-modal-title">Which product would you choose?</h3>
+        <p class="panel-muted">
+          Select the product that best matches your purchase choice to continue.
+        </p>
+        <div class="selection-modal__grid">
+          ${page.options
+            .map((option) => {
+              const selected = selectedId === option.id;
+              return `
+                <button
+                  class="selection-option ${selected ? "is-selected" : ""}"
+                  type="button"
+                  data-selection-option="${escapeHtml(option.id)}"
+                >
+                  <span class="selection-option__figure">
+                    <img
+                      src="${escapeHtml(option.image)}"
+                      alt="${escapeHtml(option.title)}"
+                      loading="eager"
+                    />
+                  </span>
+                  <span class="selection-option__label">${escapeHtml(option.label)}</span>
+                </button>
+              `;
+            })
+            .join("")}
+        </div>
+        <div class="selection-modal__actions">
+          <button
+            id="confirm-selection-button"
+            class="button"
+            type="button"
+            ${selectedId ? "" : "disabled"}
+          >
+            Continue
+          </button>
+        </div>
+      </section>
+    </div>
   `;
 }
 
@@ -737,53 +986,57 @@ function attachStimulusInteractions(page, previewMode = false) {
   }
 
   if (!previewMode) {
-    const cards = Array.from(stage.querySelectorAll(".stimulus-card"));
-    cards.forEach((card) => {
-      card.addEventListener("click", () => {
+    const selectionOptions = Array.from(
+      stage.querySelectorAll("[data-selection-option]"),
+    );
+    selectionOptions.forEach((optionButton) => {
+      optionButton.addEventListener("click", () => {
         const option = page.options.find(
-          (entry) => entry.id === card.dataset.optionId,
+          (entry) => entry.id === optionButton.dataset.selectionOption,
         );
         if (!option) {
           return;
         }
         state.currentSelection = option.id;
         state.session = updateStimulusSelection(state.session, page.id, option);
-        updateStimulusSelectionUi(stage, page, option.id);
+        renderStimulus(false);
       });
     });
 
-    const nextButton = document.getElementById("next-button");
-    if (nextButton) {
-      nextButton.addEventListener("click", handleNextStimulus);
-    }
+    document
+      .getElementById("confirm-selection-button")
+      ?.addEventListener("click", handleNextStimulus);
+  } else {
+    document
+      .getElementById("leave-preview")
+      ?.addEventListener("click", () => {
+        state.view = state.previewReturnView;
+        state.stimulusIndex = state.previewReturnStimulusIndex;
+        render();
+      });
   }
 
-  const rectGetter = () => stage.getBoundingClientRect();
-  webgazerController.setPageContext(page.id, rectGetter);
+  if (!previewMode && state.selectionModalOpen) {
+    webgazerController.clearPageContext();
+  } else {
+    const rectGetter = () => stage.getBoundingClientRect();
+    webgazerController.setPageContext(page.id, rectGetter);
+  }
   refreshDebugOverlay();
 }
 
-function updateStimulusSelectionUi(stage, page, selectedId) {
-  const cards = Array.from(stage.querySelectorAll(".stimulus-card"));
-  cards.forEach((card) => {
-    const button = card.querySelector(".choice-button");
-    const selected = card.dataset.optionId === selectedId;
-    const option = page.options.find((entry) => entry.id === card.dataset.optionId);
-    card.classList.toggle("is-selected", selected);
-    if (button) {
-      button.textContent = selected
-        ? "Selected"
-        : `Choose ${option?.label || "option"}`;
-    }
-  });
-
-  const nextButton = document.getElementById("next-button");
-  if (nextButton) {
-    nextButton.textContent = "Next page";
-    nextButton.disabled =
-      state.gateRemainingMs > 0 ||
-      (STUDY_CONFIG.stimulus.requireSelectionToAdvance && !selectedId);
+function openSelectionModal(page) {
+  if (state.selectionModalOpen) {
+    return;
   }
+
+  clearGateTimer();
+  state.gateRemainingMs = 0;
+  state.selectionModalOpen = true;
+  state.stimulusViewingElapsedMs =
+    Date.now() - state.currentPageStartedAt;
+  webgazerController.clearPageContext();
+  renderStimulus(false);
 }
 
 function startStimulusPageTracking(page) {
@@ -795,6 +1048,8 @@ function startStimulusPageTracking(page) {
   state.activeStimulusPageId = page.id;
   state.currentPageStartedAt = Date.now();
   state.currentSelection = state.session.pages?.[page.id]?.selection || null;
+  state.selectionModalOpen = false;
+  state.stimulusViewingElapsedMs = 0;
   state.session = beginStimulusPage(state.session, page);
   state.gateRemainingMs = STUDY_CONFIG.stimulus.minimumViewingTimeMs;
   state.gateTimer = window.setInterval(() => {
@@ -803,25 +1058,23 @@ function startStimulusPageTracking(page) {
       0,
       STUDY_CONFIG.stimulus.minimumViewingTimeMs - elapsed,
     );
-    const button = document.getElementById("next-button");
     const timerLabel = document.getElementById("timer-label");
     if (timerLabel) {
       timerLabel.textContent =
         state.gateRemainingMs > 0
           ? `Minimum viewing time remaining: ${(state.gateRemainingMs / 1000).toFixed(1)}s`
-          : "Minimum viewing time satisfied";
+          : "Selection prompt ready";
     }
-    if (button) {
-      button.disabled =
-        state.gateRemainingMs > 0 ||
-        (STUDY_CONFIG.stimulus.requireSelectionToAdvance && !state.currentSelection);
+
+    if (state.gateRemainingMs <= 0) {
+      openSelectionModal(page);
     }
   }, 100);
 }
 
 function renderStimulus(previewMode = false) {
   const page = previewMode
-    ? STUDY_CONFIG.stimulusPages.find((entry) => entry.id === state.previewPageId)
+    ? getPageDefinitionById(state.previewPageId)
     : getCurrentStimulus();
 
   if (!page) {
@@ -836,72 +1089,61 @@ function renderStimulus(previewMode = false) {
 
   const selectedId =
     state.currentSelection || state.session.pages?.[page.id]?.selection || null;
-  const selectionSatisfied =
-    previewMode ||
-    !STUDY_CONFIG.stimulus.requireSelectionToAdvance ||
-    Boolean(selectedId);
-  const timeSatisfied =
-    previewMode ||
-    state.gateRemainingMs <= 0 ||
-    STUDY_CONFIG.stimulus.minimumViewingTimeMs === 0;
-  const canAdvance =
-    previewMode || (selectionSatisfied && timeSatisfied);
 
   app.innerHTML = `
     <section class="study-frame">
       <div
         id="stimulus-stage"
-        class="stimulus-stage"
-        style="--stimulus-frame-ratio: ${escapeHtml(page.frameAspectRatio || "4 / 5")};"
+        class="stimulus-stage stimulus-stage--immersive"
+        style="--stimulus-frame-ratio: ${escapeHtml(page.frameAspectRatio || "4 / 5")}; --stimulus-columns: ${escapeHtml(
+          String(page.options.length || 3),
+        )};"
       >
         <div class="stimulus-stage__header">
           <div class="stimulus-stage__meta">
-            <p class="stage-kicker">${previewMode ? "Admin Preview" : escapeHtml(page.title)}</p>
+            <p class="stage-kicker">${previewMode ? "Admin Preview" : escapeHtml(
+              `${page.familyLabel} · ${page.caseId}`,
+            )}</p>
+            <p class="helper-text">${escapeHtml(page.caseTitle)}</p>
           </div>
-          <div class="timing-chip">${escapeHtml(page.imageSetId)}</div>
+          <div class="timing-chip">${escapeHtml(`Template ${page.template}`)}</div>
         </div>
 
-        <div class="stimulus-grid">
+        <div class="stimulus-grid stimulus-grid--immersive">
           ${page.options
-            .map((option) => buildStimulusCard(option, selectedId, previewMode))
+            .map((option) => buildStimulusCard(option, selectedId))
             .join("")}
         </div>
 
-        <div class="question-block">
-          <span class="question-label">Selection Required</span>
-          <p><strong>Select one image to continue.</strong></p>
-          <div class="timing-row">
-            <span id="timer-label" class="timing-chip">
-              ${
-                previewMode
-                  ? "Preview mode"
-                  : `Minimum viewing time remaining: ${(
-                      STUDY_CONFIG.stimulus.minimumViewingTimeMs / 1000
-                    ).toFixed(1)}s`
-              }
-            </span>
+        <div class="stimulus-stage__footer">
+          <span id="timer-label" class="timing-chip">
             ${
               previewMode
-                ? `<button id="leave-preview" class="ghost-button" type="button">Back to dashboard</button>`
-                : `<button id="next-button" class="button" type="button" ${
-                    canAdvance ? "" : "disabled"
-                  }>
-                     Next page
-                   </button>`
+                ? "Preview mode"
+                : state.selectionModalOpen
+                  ? "Make your selection to continue"
+                  : `Viewing period: ${(state.gateRemainingMs / 1000).toFixed(1)}s remaining`
             }
-          </div>
+          </span>
+          ${
+            previewMode
+              ? `<button id="leave-preview" class="ghost-button" type="button">Back to dashboard</button>`
+              : `<span class="helper-text">${
+                  state.selectionModalOpen
+                    ? "Your choice popup is active."
+                    : "Selection will open automatically after the viewing period."
+                }</span>`
+          }
         </div>
+
+        ${
+          !previewMode && state.selectionModalOpen
+            ? buildStimulusSelectionModal(page, selectedId)
+            : ""
+        }
       </div>
     </section>
   `;
-
-  if (previewMode) {
-    document.getElementById("leave-preview").addEventListener("click", () => {
-      state.view = state.previewReturnView;
-      state.stimulusIndex = state.previewReturnStimulusIndex;
-      render();
-    });
-  }
 
   attachStimulusInteractions(page, previewMode);
 }
@@ -912,7 +1154,7 @@ function handleNextStimulus() {
     return;
   }
 
-  const elapsed = Date.now() - state.currentPageStartedAt;
+  const elapsed = state.stimulusViewingElapsedMs || (Date.now() - state.currentPageStartedAt);
   if (elapsed < STUDY_CONFIG.stimulus.minimumViewingTimeMs) {
     return;
   }
@@ -923,10 +1165,12 @@ function handleNextStimulus() {
 
   clearGateTimer();
   state.activeStimulusPageId = null;
+  state.selectionModalOpen = false;
+  state.stimulusViewingElapsedMs = 0;
   state.session = completeStimulusPage(state.session, page.id, elapsed);
   webgazerController.clearPageContext();
 
-  if (state.stimulusIndex < STUDY_CONFIG.stimulusPages.length - 1) {
+  if (state.stimulusIndex < getCurrentStimulusPlan().length - 1) {
     state.stimulusIndex += 1;
     render();
     return;
@@ -939,7 +1183,7 @@ function handleNextStimulus() {
 }
 
 function renderFinal() {
-  const sessionPages = STUDY_CONFIG.stimulusPages.map((page) => ({
+  const sessionPages = getCurrentStimulusPlan().map((page) => ({
     page,
     record: state.session.pages?.[page.id] || null,
   }));
@@ -984,6 +1228,7 @@ function renderFinal() {
             <thead>
               <tr>
                 <th>Page</th>
+                <th>Case</th>
                 <th>Selection</th>
                 <th>Time</th>
                 <th>Samples</th>
@@ -998,6 +1243,7 @@ function renderFinal() {
                   return `
                     <tr>
                       <td>${escapeHtml(page.title)}</td>
+                      <td>${escapeHtml(page.caseTitle)}</td>
                       <td>${escapeHtml(label)}</td>
                       <td>${escapeHtml(formatDuration(record?.timeOnPageMs || 0))}</td>
                       <td>${escapeHtml(
@@ -1153,6 +1399,7 @@ function renderFinal() {
       state.session = createSession(STUDY_CONFIG);
       state.session = saveCurrentSession(state.session);
       state.activeStimulusPageId = null;
+      state.debug.selectedPageId = getCurrentStimulusPlan()[0]?.id || "";
       state.view = "intro";
       state.stimulusIndex = 0;
       setAlert("");
@@ -1178,9 +1425,16 @@ function renderAdminDrawer() {
   }
 
   const selectedSession = getSelectedSession();
+  const availablePages = getAvailableStimulusPages();
+  const importedStudySessions = state.importedSessions.filter(
+    (session) => session.studyId === STUDY_CONFIG.studyId,
+  );
+  if (!availablePages.find((page) => page.id === state.debug.selectedPageId)) {
+    state.debug.selectedPageId = availablePages[0]?.id || "";
+  }
   const sessions = [
     { participantId: "current", label: "Current browser session" },
-    ...state.importedSessions.map((session) => ({
+    ...importedStudySessions.map((session) => ({
       participantId: session.participantId,
       label: `${session.participantId.slice(0, 8)}${session.status === "completed" ? " (completed)" : ""}`,
     })),
@@ -1235,13 +1489,13 @@ function renderAdminDrawer() {
     <div class="stack">
       <label for="page-picker">Stimulus page</label>
       <select id="page-picker">
-        ${STUDY_CONFIG.stimulusPages
+        ${availablePages
           .map(
             (page) => `
               <option value="${escapeHtml(page.id)}" ${
                 state.debug.selectedPageId === page.id ? "selected" : ""
               }>
-                ${escapeHtml(page.title)}
+                ${escapeHtml(`${page.familyLabel} · ${page.caseId}`)}
               </option>
             `,
           )
@@ -1266,7 +1520,8 @@ function renderAdminDrawer() {
         Selected session: ${escapeHtml(
           selectedSession?.participantId || "none",
         )}<br />
-        Available imported sessions: ${state.importedSessions.length}
+        Available imported sessions: ${importedStudySessions.length}<br />
+        Known case pages: ${availablePages.length}
       </p>
     </div>
   `;
@@ -1402,6 +1657,10 @@ function handleGazeSample(sample) {
 }
 
 function render() {
+  siteShellEl?.classList.toggle(
+    "site-shell--immersive",
+    state.view === "stimulus" || state.view === "preview",
+  );
   updateHeader();
   renderAdminDrawer();
 
