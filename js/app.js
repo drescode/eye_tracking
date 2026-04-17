@@ -2,7 +2,7 @@ import {
   STUDY_CONFIG,
   TOTAL_STEPS,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260417q";
+} from "./config.js?v=20260417r";
 import {
   appendGazePoint,
   appendTrackingStatus,
