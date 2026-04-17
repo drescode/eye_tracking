@@ -194,16 +194,16 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
           "Replace placeholders with an official Makro Business screenshot and laptop cut-out at 1600x900 or larger.",
         options: [
           {
-            variantId: "students",
-            label: "Students",
-            title: "Built for students",
+            variantId: "business",
+            label: "Business",
+            title: "Built for business",
             image: "./pics/2.jpeg",
             placeholder: true,
           },
           {
-            variantId: "business",
-            label: "Business",
-            title: "Built for business",
+            variantId: "students",
+            label: "Students",
+            title: "Built for students",
             image: "./pics/22.jpeg",
             placeholder: true,
           },
@@ -271,6 +271,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "FUTURELIFE High Protein Smart Food",
         template: "A",
         imageSetId: "prd1-futurelife",
+        frameAspectRatio: "3 / 4",
         retailer: "FUTURELIFE",
         product: "FUTURELIFE High Protein Smart food 500g",
         prompt:
@@ -327,7 +328,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "Woolworths MyDifference reward framing",
         template: "A",
         imageSetId: "pri3-woolworths",
-        frameAspectRatio: "2 / 5",
+        frameAspectRatio: "3 / 2",
         retailer: "Woolworths",
         product:
           "Woolworths women’s Quality Sale item such as the Slash Neck Modal Blend T-shirt",
@@ -385,6 +386,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "Checkers Sixty60 60-minute promise placement",
         template: "A",
         imageSetId: "pla1-checkers-delivery",
+        frameAspectRatio: "3 / 2",
         retailer: "Checkers Sixty60",
         product: "KOO baked beans tile within the Checkers delivery environment",
         prompt:
@@ -439,7 +441,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "Savanna health-message block visibility",
         template: "C",
         imageSetId: "sm1-savanna",
-        frameAspectRatio: "3 / 4",
+        frameAspectRatio: "1 / 1",
         retailer: "Checkers",
         product: "Savanna Premium Dry Cider Bottle 500ml",
         prompt:
@@ -491,7 +493,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
 
 export const STUDY_CONFIG = {
   studyId: "nm-sa-briefs-001",
-  studyBuildId: "20260417-six-page-image-set-refresh",
+  studyBuildId: "20260417-frame-fix-and-sql-reset",
   studyTitle: "South African E-Commerce Attention Study",
   studySubtitle:
     "A browser-based research prototype testing localized e-commerce briefs, retail framing, and spending-choice behavior in South African contexts.",
