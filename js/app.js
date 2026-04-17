@@ -2,7 +2,7 @@ import {
   STUDY_CONFIG,
   TOTAL_STEPS,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260417l";
+} from "./config.js?v=20260417q";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -77,6 +77,7 @@ const state = {
     selectedSessionId: "current",
     selectedPageId: initialStimulusPlan[0]?.id || "",
   },
+  lastScrollKey: null,
 };
 
 const app = document.getElementById("app");
@@ -142,9 +143,13 @@ function getStepData() {
     return { current: 2, label: "Calibration" };
   }
 
+  if (state.view === "stimulus-instructions") {
+    return { current: 3, label: "Before You Begin" };
+  }
+
   if (state.view === "stimulus") {
     return {
-      current: 3 + state.stimulusIndex,
+      current: 4 + state.stimulusIndex,
       label: `Stimulus ${state.stimulusIndex + 1}`,
     };
   }
@@ -154,7 +159,7 @@ function getStepData() {
       (page) => page.id === state.previewPageId,
     );
     return {
-      current: Math.max(3, previewIndex + 3),
+      current: Math.max(4, previewIndex + 4),
       label: "Admin Preview",
     };
   }
@@ -818,8 +823,7 @@ function startTrackingQualityCheck() {
       state.qualityCheck.status = "passed";
       webgazerController.setCalibrationMode(false);
       webgazerController.clearPageContext();
-      state.view = "stimulus";
-      state.stimulusIndex = 0;
+      state.view = "stimulus-instructions";
       render();
       return;
     }
@@ -908,6 +912,39 @@ function renderTrackingQualityCheck() {
         render();
       });
   }
+}
+
+function renderStimulusInstructions() {
+  app.innerHTML = `
+    <section class="study-frame">
+      <article class="hero-card stack focus-card">
+        <div>
+          <p class="eyebrow">Before You Begin</p>
+          <h2>${escapeHtml(STUDY_CONFIG.stimulusInstructions.title)}</h2>
+          <p class="lead">${escapeHtml(STUDY_CONFIG.stimulusInstructions.copy)}</p>
+          <p>${escapeHtml(STUDY_CONFIG.stimulusInstructions.reminder)}</p>
+        </div>
+
+        <div class="notice-card">
+          <p><strong>Viewing period:</strong> Each stimulus page will remain on screen for ${Math.round(
+            STUDY_CONFIG.stimulus.minimumViewingTimeMs / 1000,
+          )} seconds before the selection popup appears.</p>
+        </div>
+
+        <div class="button-row">
+          <button id="begin-stimulus-pages" class="button" type="button">
+            ${escapeHtml(STUDY_CONFIG.stimulusInstructions.buttonLabel)}
+          </button>
+        </div>
+      </article>
+    </section>
+  `;
+
+  document.getElementById("begin-stimulus-pages")?.addEventListener("click", () => {
+    state.view = "stimulus";
+    state.stimulusIndex = 0;
+    render();
+  });
 }
 
 function buildStimulusCard(option, selectedId) {
@@ -1613,10 +1650,46 @@ function handleGazeSample(sample) {
   }
 }
 
+function getScrollKey() {
+  if (state.view === "stimulus") {
+    const page = getCurrentStimulus();
+    return `stimulus:${page?.id || state.stimulusIndex}`;
+  }
+
+  if (state.view === "preview") {
+    return `preview:${state.previewPageId || "none"}`;
+  }
+
+  return state.view;
+}
+
+function scrollToTopForPageChange() {
+  const nextScrollKey = getScrollKey();
+
+  if (state.lastScrollKey === nextScrollKey) {
+    return;
+  }
+
+  state.lastScrollKey = nextScrollKey;
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "auto",
+  });
+}
+
 function render() {
   const studyLayoutActive = [
     "calibration",
     "quality-check",
+    "stimulus-instructions",
+    "stimulus",
+    "preview",
+  ].includes(state.view);
+  const focusLayoutActive = [
+    "calibration",
+    "quality-check",
+    "stimulus-instructions",
     "stimulus",
     "preview",
   ].includes(state.view);
@@ -1627,6 +1700,7 @@ function render() {
     studyLayoutActive,
   );
   siteHeaderEl?.classList.toggle("site-header--compact", studyLayoutActive);
+  siteHeaderEl?.classList.toggle("site-header--focus", focusLayoutActive);
   updateHeader();
   renderAdminDrawer();
 
@@ -1638,6 +1712,8 @@ function render() {
     renderCalibration();
   } else if (state.view === "quality-check") {
     renderTrackingQualityCheck();
+  } else if (state.view === "stimulus-instructions") {
+    renderStimulusInstructions();
   } else if (state.view === "stimulus") {
     renderStimulus(false);
   } else if (state.view === "preview") {
@@ -1646,6 +1722,7 @@ function render() {
     renderFinal();
   }
 
+  scrollToTopForPageChange();
   refreshDebugOverlay();
   scheduleDebugRefresh();
 }

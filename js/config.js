@@ -639,6 +639,14 @@ export const STUDY_CONFIG = {
     timerMessage:
       "The Next step becomes available only after the minimum viewing time has elapsed and one option has been selected.",
   },
+  stimulusInstructions: {
+    title: "Before the product pages begin",
+    copy:
+      "On each product page, you will be expected to look at the images for 8 seconds before the selection prompt appears.",
+    reminder:
+      "Please use the full viewing period to inspect the images naturally. After 8 seconds, a popup will ask you to choose the option you would select.",
+    buttonLabel: "Continue to tracking check",
+  },
   debrief: {
     title: "Debrief and Thank You",
     copy:
@@ -653,4 +661,4 @@ export const STUDY_CONFIG = {
   stimulusPages: buildStimulusPlan("preview-seed"),
 };
 
-export const TOTAL_STEPS = 2 + STUDY_CONFIG.totalStimulusPages + 1;
+export const TOTAL_STEPS = 3 + STUDY_CONFIG.totalStimulusPages + 1;

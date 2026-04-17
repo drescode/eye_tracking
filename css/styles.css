@@ -164,6 +164,21 @@ h3 {
   font-size: 0.98rem;
 }
 
+.site-header--focus {
+  grid-template-columns: 1fr;
+  margin-bottom: 12px;
+}
+
+.site-header--focus .site-header__meta {
+  display: none;
+}
+
+.site-header--focus .site-header__status {
+  justify-self: stretch;
+  width: min(760px, 100%);
+  margin-left: auto;
+}
+
 .site-header__status {
   display: grid;
   gap: 14px;
