@@ -2,14 +2,11 @@ import {
   STUDY_CONFIG,
   TOTAL_STEPS,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260417c";
+} from "./config.js?v=20260417g";
 import {
   appendGazePoint,
   appendTrackingStatus,
   beginStimulusPage,
-  buildHeatmapExport,
-  buildSessionJson,
-  buildSummaryCsv,
   completeCalibration,
   completeStimulusPage,
   computeAggregateStats,
@@ -17,7 +14,6 @@ import {
   getAllSessions,
   getImportedSessions,
   loadCurrentSession,
-  markExportTime,
   markRemoteSubmissionError,
   markRemoteSubmissionPending,
   markRemoteSubmissionSuccess,
@@ -32,15 +28,15 @@ import {
   updateParticipantProfile,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260417c";
-import { WebgazerController } from "./webgazer-controller.js?v=20260417c";
-import { CalibrationSequence } from "./calibration.js?v=20260417c";
-import { HeatmapRenderer } from "./heatmap.js?v=20260417c";
+} from "./data-store.js?v=20260417g";
+import { WebgazerController } from "./webgazer-controller.js?v=20260417g";
+import { CalibrationSequence } from "./calibration.js?v=20260417g";
+import { HeatmapRenderer } from "./heatmap.js?v=20260417g";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260417c";
+} from "./supabase-store.js?v=20260417g";
 
 const query = new URLSearchParams(window.location.search);
 const initialSession = loadCurrentSession(STUDY_CONFIG);
@@ -90,6 +86,7 @@ const progressBarEl = document.getElementById("progress-bar");
 const statusEl = document.getElementById("tracking-status");
 const alertEl = document.getElementById("global-alert");
 const siteShellEl = document.querySelector(".site-shell");
+const siteHeaderEl = document.querySelector(".site-header");
 
 const heatmapRenderer = new HeatmapRenderer();
 const webgazerController = new WebgazerController({
@@ -1279,16 +1276,6 @@ function renderFinal() {
           }
         </div>
 
-        <div class="upload-card">
-          <h3>Export Study Data</h3>
-          <p>Download the current participant session as a backup copy in JSON, CSV summary, or heatmap-ready JSON format.</p>
-          <div class="export-row">
-            <button id="export-json" class="button" type="button">Download JSON</button>
-            <button id="export-csv" class="secondary-button" type="button">Download CSV</button>
-            <button id="export-heatmap" class="ghost-button" type="button">Heatmap JSON</button>
-          </div>
-        </div>
-
         ${
           state.adminMode
             ? `
@@ -1354,33 +1341,6 @@ function renderFinal() {
       </aside>
     </section>
   `;
-
-  document.getElementById("export-json").addEventListener("click", () => {
-    downloadTextFile(
-      `${state.session.participantId}.json`,
-      buildSessionJson(state.session),
-      "application/json",
-    );
-    state.session = markExportTime(state.session, "json");
-  });
-
-  document.getElementById("export-csv").addEventListener("click", () => {
-    downloadTextFile(
-      `${state.session.participantId}-summary.csv`,
-      buildSummaryCsv(state.session, STUDY_CONFIG),
-      "text/csv;charset=utf-8",
-    );
-    state.session = markExportTime(state.session, "csv");
-  });
-
-  document.getElementById("export-heatmap").addEventListener("click", () => {
-    downloadTextFile(
-      `${state.session.participantId}-heatmaps.json`,
-      buildHeatmapExport(state.session, STUDY_CONFIG),
-      "application/json",
-    );
-    state.session = markExportTime(state.session, "heatmap");
-  });
 
   const retryUploadButton = document.getElementById("retry-upload");
   if (retryUploadButton) {
@@ -1657,10 +1617,19 @@ function handleGazeSample(sample) {
 }
 
 function render() {
+  const studyLayoutActive = [
+    "calibration",
+    "quality-check",
+    "stimulus",
+    "preview",
+  ].includes(state.view);
+
+  siteShellEl?.classList.toggle("site-shell--study", studyLayoutActive);
   siteShellEl?.classList.toggle(
     "site-shell--immersive",
-    state.view === "stimulus" || state.view === "preview",
+    studyLayoutActive,
   );
+  siteHeaderEl?.classList.toggle("site-header--compact", studyLayoutActive);
   updateHeader();
   renderAdminDrawer();
 
