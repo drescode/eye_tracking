@@ -81,9 +81,9 @@ button {
 
 .site-header {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.6fr);
-  gap: 20px;
-  align-items: end;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  align-items: start;
   margin-bottom: 24px;
 }
 
@@ -112,8 +112,9 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(2.4rem, 4vw, 4.1rem);
-  max-width: 17ch;
+  font-size: clamp(2.7rem, 4.8vw, 4.9rem);
+  max-width: none;
+  text-wrap: balance;
 }
 
 h2 {
@@ -125,10 +126,14 @@ h3 {
 }
 
 .site-subtitle {
-  max-width: 62ch;
+  max-width: 78ch;
   margin: 14px 0 0;
   font-size: 1.08rem;
   color: var(--text-soft);
+}
+
+.site-header__meta {
+  max-width: none;
 }
 
 .site-header--compact .site-header__meta {
@@ -155,6 +160,8 @@ h3 {
 .site-header__status {
   display: grid;
   gap: 14px;
+  width: min(620px, 100%);
+  justify-self: end;
 }
 
 .site-header--compact .site-header__status {
