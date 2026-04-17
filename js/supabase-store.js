@@ -132,34 +132,20 @@ export async function submitSessionToSupabase(config, session) {
   const settings = getSupabaseSettings(config);
   const payload = buildSupabaseSubmission(config, session);
 
-  const {
-    data: rpcData,
-    error: rpcError,
-  } = await client.rpc("submit_participant_session", { payload });
-
-  if (!rpcError) {
-    const resultRow = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-    return {
-      ok: true,
-      duplicate: Boolean(resultRow?.duplicate),
-      participantNumber:
-        Number.isFinite(resultRow?.participant_number) && resultRow.participant_number > 0
-          ? resultRow.participant_number
-          : null,
-    };
-  }
-
-  if (!/submit_participant_session/i.test(rpcError.message || "")) {
-    throw new Error(rpcError.message || "Supabase RPC submission failed.");
-  }
-
-  const { error } = await client.from(settings.table).insert(payload);
+  const { data, error } = await client
+    .from(settings.table)
+    .insert(payload)
+    .select("participant_number")
+    .single();
 
   if (!error) {
     return {
       ok: true,
       duplicate: false,
-      participantNumber: null,
+      participantNumber:
+        Number.isFinite(data?.participant_number) && data.participant_number > 0
+          ? data.participant_number
+          : null,
     };
   }
 
