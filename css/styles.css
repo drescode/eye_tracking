@@ -19,7 +19,7 @@
   --radius-lg: 28px;
   --radius-md: 18px;
   --radius-sm: 12px;
-  --content-width: 1180px;
+  --content-width: 1380px;
 }
 
 *,
@@ -88,7 +88,7 @@ button {
 }
 
 .site-header--compact {
-  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
+  grid-template-columns: minmax(0, 2.2fr) minmax(280px, 0.48fr);
   align-items: start;
   gap: 16px;
   margin-bottom: 16px;
@@ -112,12 +112,14 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(2.45rem, 4.25vw, 4.35rem);
+  font-size: clamp(1.85rem, 2.7vw, 3rem);
   max-width: none;
-  text-wrap: balance;
+  text-wrap: nowrap;
+  white-space: nowrap;
   hyphens: none;
   word-break: keep-all;
   overflow-wrap: normal;
+  letter-spacing: -0.025em;
 }
 
 h2 {
@@ -149,9 +151,11 @@ h3 {
 }
 
 .site-header--compact h1 {
-  max-width: 18ch;
-  font-size: clamp(1.95rem, 2.85vw, 3.2rem);
-  line-height: 0.96;
+  max-width: none;
+  font-size: clamp(1.18rem, 1.35vw, 1.55rem);
+  line-height: 1;
+  text-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .site-header--compact .site-subtitle {
@@ -562,13 +566,13 @@ h3 {
 .stimulus-stage--immersive {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  min-height: calc(100vh - 220px);
+  min-height: clamp(420px, 58vh, 620px);
   padding: 24px;
 }
 
 .site-shell--study .stimulus-stage--immersive {
-  min-height: calc(100vh - 168px);
-  padding: 20px 22px;
+  min-height: clamp(380px, 50vh, 540px);
+  padding: 16px 18px;
 }
 
 .stimulus-stage__header {
@@ -605,24 +609,25 @@ h3 {
 }
 
 .stimulus-grid--immersive {
-  min-height: clamp(460px, 64vh, 780px);
-  margin-bottom: 16px;
+  min-height: clamp(240px, 34vh, 380px);
+  margin-bottom: 10px;
 }
 
 .site-shell--study .stimulus-grid--immersive {
-  min-height: clamp(500px, 70vh, 860px);
+  min-height: clamp(220px, 30vh, 340px);
 }
 
 .stimulus-card {
   position: relative;
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: auto auto;
   align-content: start;
   padding: 16px;
   border-radius: 22px;
   border: 1px solid var(--line);
   background: var(--surface);
-  min-height: 100%;
+  min-height: 0;
+  align-self: start;
 }
 
 .stimulus-card__figure {
@@ -630,7 +635,7 @@ h3 {
   place-items: center;
   width: 100%;
   aspect-ratio: var(--stimulus-frame-ratio, 4 / 5);
-  min-height: 100%;
+  min-height: 0;
   padding: 14px;
   overflow: hidden;
   border-radius: 18px;

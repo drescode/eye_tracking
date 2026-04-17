@@ -98,9 +98,6 @@ create table if not exists public.gaze_samples (
   unique (page_response_id, phase, sample_index)
 );
 
-alter sequence public.participant_sessions_participant_number_seq
-  owned by public.participant_sessions.participant_number;
-
 alter table public.participant_sessions
   add column if not exists participant_number bigint,
   add column if not exists age_category text,
@@ -114,6 +111,9 @@ alter table public.participant_sessions
 alter table public.participant_sessions
   alter column participant_number
   set default nextval('public.participant_sessions_participant_number_seq');
+
+alter sequence public.participant_sessions_participant_number_seq
+  owned by public.participant_sessions.participant_number;
 
 update public.participant_sessions
 set participant_number = nextval('public.participant_sessions_participant_number_seq')
@@ -228,7 +228,7 @@ begin
       combined_invalid_sample_count
     )
     values (
-      session_row.participant_id,
+      session_row.id,
       session_row.participant_id,
       session_row.participant_number,
       session_row.study_id,
@@ -406,6 +406,41 @@ select
 from public.page_responses pr
 join public.participant_sessions ps
   on ps.id = pr.session_id;
+
+create or replace view public.page_phase_metric_analysis as
+select
+  ppm.id as page_phase_metric_id,
+  ppm.page_response_id,
+  ppm.session_id,
+  ppm.participant_id,
+  ppm.participant_number,
+  ppm.study_id,
+  ps.age_category,
+  ps.province,
+  ps.gender_identity,
+  ps.online_shopping_frequency,
+  ps.primary_shopping_device,
+  ps.retailer_familiarity,
+  pr.page_id,
+  pr.page_title,
+  pr.family_id,
+  pr.family_label,
+  pr.case_id,
+  pr.case_title,
+  pr.template,
+  pr.image_set_id,
+  ppm.phase,
+  ppm.started_at,
+  ppm.ended_at,
+  ppm.time_on_page_ms,
+  ppm.valid_sample_count,
+  ppm.invalid_sample_count,
+  ps.created_at as session_created_at
+from public.page_phase_metrics ppm
+join public.page_responses pr
+  on pr.id = ppm.page_response_id
+join public.participant_sessions ps
+  on ps.id = ppm.session_id;
 
 create or replace view public.gaze_sample_analysis as
 select
