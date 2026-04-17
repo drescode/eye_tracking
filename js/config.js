@@ -493,6 +493,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
 
 export const STUDY_CONFIG = {
   studyId: "nm-sa-briefs-001",
+  studyBuildId: "20260417-be1-beans-refresh",
   studyTitle: "South African E-Commerce Attention Study",
   studySubtitle:
     "A browser-based research prototype testing localized e-commerce briefs, retail framing, and spending-choice behavior in South African contexts.",

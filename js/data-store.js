@@ -1,7 +1,9 @@
 import {
   buildStimulusPlan,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260417s";
+} from "./config.js?v=20260417t";
+
+const CURRENT_SCHEMA_VERSION = 4;
 
 const STORAGE_KEYS = {
   currentSession: "nm-study-current-session",
@@ -167,8 +169,9 @@ export function createSession(config) {
   );
 
   return ensureRemoteSubmissionShape({
-    schemaVersion: 3,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     studyId: config.studyId,
+    studyBuildId: config.studyBuildId || "default",
     studyTitle: config.studyTitle,
     participantId,
     participantNumber: null,
@@ -220,7 +223,14 @@ export function saveCurrentSession(session) {
 export function loadCurrentSession(config) {
   const session = safeParse(localStorage.getItem(STORAGE_KEYS.currentSession), null);
 
-  if (!session || session.studyId !== config.studyId) {
+  const expectedBuildId = config.studyBuildId || "default";
+  const needsFreshSession =
+    !session ||
+    session.studyId !== config.studyId ||
+    session.studyBuildId !== expectedBuildId ||
+    session.schemaVersion !== CURRENT_SCHEMA_VERSION;
+
+  if (needsFreshSession) {
     return saveCurrentSession(createSession(config));
   }
 

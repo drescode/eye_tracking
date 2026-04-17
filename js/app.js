@@ -2,7 +2,7 @@ import {
   STUDY_CONFIG,
   TOTAL_STEPS,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260417s";
+} from "./config.js?v=20260417t";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -29,15 +29,15 @@ import {
   updateParticipantProfile,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260417l";
-import { WebgazerController } from "./webgazer-controller.js?v=20260417l";
-import { CalibrationSequence } from "./calibration.js?v=20260417l";
-import { HeatmapRenderer } from "./heatmap.js?v=20260417l";
+} from "./data-store.js?v=20260417t";
+import { WebgazerController } from "./webgazer-controller.js?v=20260417t";
+import { CalibrationSequence } from "./calibration.js?v=20260417t";
+import { HeatmapRenderer } from "./heatmap.js?v=20260417t";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260417l";
+} from "./supabase-store.js?v=20260417t";
 
 const query = new URLSearchParams(window.location.search);
 const initialSession = loadCurrentSession(STUDY_CONFIG);
