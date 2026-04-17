@@ -56,7 +56,7 @@ const state = {
   currentSelection: null,
   gateTimer: null,
   gateRemainingMs: STUDY_CONFIG.stimulus.minimumViewingTimeMs,
-  selectionModalOpen: false,
+  selectionPhaseOpen: false,
   stimulusViewingElapsedMs: 0,
   selectionPopupStartedAt: 0,
   currentGazePhase: "stimulus",
@@ -1010,58 +1010,7 @@ function buildStimulusCard(option, selectedId, page) {
 }
 
 function buildStimulusSelectionModal(page, selectedId) {
-  const useRetailSelection = page?.cardTheme === "sixtysixty";
-  return `
-    <div class="selection-modal-backdrop" data-selection-overlay>
-      <section
-        class="selection-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="selection-modal-title"
-      >
-        <p class="eyebrow">Selection Required</p>
-        <h3 id="selection-modal-title">Which product would you choose?</h3>
-        <p class="panel-muted">
-          Select the product that best matches your purchase choice to continue.
-        </p>
-        <div class="selection-modal__grid">
-          ${page.options
-            .map((option) => {
-              const selected = selectedId === option.id;
-              return `
-                <button
-                  class="selection-option ${selected ? "is-selected" : ""}"
-                  type="button"
-                  data-selection-option="${escapeHtml(option.id)}"
-                >
-                  <span class="selection-option__figure ${
-                    useRetailSelection ? "selection-option__figure--retail" : ""
-                  }">
-                    <img
-                      src="${escapeHtml(option.image)}"
-                      alt="${escapeHtml(option.title)}"
-                      loading="eager"
-                    />
-                  </span>
-                  <span class="selection-option__label">${escapeHtml(option.label)}</span>
-                </button>
-              `;
-            })
-            .join("")}
-        </div>
-        <div class="selection-modal__actions">
-          <button
-            id="confirm-selection-button"
-            class="button"
-            type="button"
-            ${selectedId ? "" : "disabled"}
-          >
-            Continue
-          </button>
-        </div>
-      </section>
-    </div>
-  `;
+  return "";
 }
 
 function attachStimulusInteractions(page, previewMode = false) {
@@ -1071,13 +1020,15 @@ function attachStimulusInteractions(page, previewMode = false) {
   }
 
   if (!previewMode) {
-    const selectionOptions = Array.from(
-      stage.querySelectorAll("[data-selection-option]"),
-    );
-    selectionOptions.forEach((optionButton) => {
-      optionButton.addEventListener("click", () => {
+    const optionCards = Array.from(stage.querySelectorAll("[data-option-id]"));
+    optionCards.forEach((card) => {
+      card.addEventListener("click", () => {
+        if (!state.selectionPhaseOpen) {
+          return;
+        }
+
         const option = page.options.find(
-          (entry) => entry.id === optionButton.dataset.selectionOption,
+          (entry) => entry.id === card.dataset.optionId,
         );
         if (!option) {
           return;
@@ -1089,7 +1040,7 @@ function attachStimulusInteractions(page, previewMode = false) {
     });
 
     document
-      .getElementById("confirm-selection-button")
+      .getElementById("advance-stimulus-button")
       ?.addEventListener("click", handleNextStimulus);
   } else {
     document
@@ -1101,26 +1052,19 @@ function attachStimulusInteractions(page, previewMode = false) {
       });
   }
 
-  if (!previewMode && state.selectionModalOpen) {
-    const modal = stage.querySelector(".selection-modal");
-    const rectGetter = () =>
-      (modal || stage).getBoundingClientRect();
-    webgazerController.setPageContext(page.id, rectGetter);
-  } else {
-    const rectGetter = () => stage.getBoundingClientRect();
-    webgazerController.setPageContext(page.id, rectGetter);
-  }
+  const rectGetter = () => stage.getBoundingClientRect();
+  webgazerController.setPageContext(page.id, rectGetter);
   refreshDebugOverlay();
 }
 
-function openSelectionModal(page) {
-  if (state.selectionModalOpen) {
+function activateSelectionPhase(page) {
+  if (state.selectionPhaseOpen) {
     return;
   }
 
   clearGateTimer();
   state.gateRemainingMs = 0;
-  state.selectionModalOpen = true;
+  state.selectionPhaseOpen = true;
   state.stimulusViewingElapsedMs =
     Date.now() - state.currentPageStartedAt;
   state.selectionPopupStartedAt = Date.now();
@@ -1138,7 +1082,7 @@ function startStimulusPageTracking(page) {
   state.activeStimulusPageId = page.id;
   state.currentPageStartedAt = Date.now();
   state.currentSelection = state.session.pages?.[page.id]?.selection || null;
-  state.selectionModalOpen = false;
+  state.selectionPhaseOpen = false;
   state.stimulusViewingElapsedMs = 0;
   state.selectionPopupStartedAt = 0;
   state.currentGazePhase = "stimulus";
@@ -1151,17 +1095,17 @@ function startStimulusPageTracking(page) {
       STUDY_CONFIG.stimulus.minimumViewingTimeMs - elapsed,
     );
     const timerLabel = document.getElementById("timer-label");
-    if (timerLabel) {
-      timerLabel.textContent =
-        state.gateRemainingMs > 0
-          ? `Minimum viewing time remaining: ${(state.gateRemainingMs / 1000).toFixed(1)}s`
-          : "Selection prompt ready";
-    }
+      if (timerLabel) {
+        timerLabel.textContent =
+          state.gateRemainingMs > 0
+            ? `Minimum viewing time remaining: ${(state.gateRemainingMs / 1000).toFixed(1)}s`
+            : "Select one option and continue";
+      }
 
-    if (state.gateRemainingMs <= 0) {
-      openSelectionModal(page);
-    }
-  }, 100);
+      if (state.gateRemainingMs <= 0) {
+        activateSelectionPhase(page);
+      }
+    }, 100);
 }
 
 function renderStimulus(previewMode = false) {
@@ -1212,27 +1156,37 @@ function renderStimulus(previewMode = false) {
             ${
               previewMode
                 ? "Preview mode"
-                : state.selectionModalOpen
-                  ? "Make your selection to continue"
+                : state.selectionPhaseOpen
+                  ? "Select one option and continue"
                   : `Viewing period: ${(state.gateRemainingMs / 1000).toFixed(1)}s remaining`
             }
           </span>
           ${
             previewMode
               ? `<button id="leave-preview" class="ghost-button" type="button">Back to dashboard</button>`
-              : `<span class="helper-text">${
-                  state.selectionModalOpen
-                    ? "Your choice popup is active."
-                    : "Selection will open automatically after the viewing period."
-                }</span>`
+              : `
+                  <div class="stimulus-stage__actions">
+                    <span class="helper-text">${
+                      state.selectionPhaseOpen
+                        ? "Choose directly from the page and continue."
+                        : "Selection becomes available on the page after the viewing period."
+                    }</span>
+                    <button
+                      id="advance-stimulus-button"
+                      class="button"
+                      type="button"
+                      ${
+                        state.selectionPhaseOpen && selectedId
+                          ? ""
+                          : "disabled"
+                      }
+                    >
+                      Continue
+                    </button>
+                  </div>
+                `
           }
         </div>
-
-        ${
-          !previewMode && state.selectionModalOpen
-            ? buildStimulusSelectionModal(page, selectedId)
-            : ""
-        }
       </div>
     </section>
   `;
@@ -1257,7 +1211,7 @@ function handleNextStimulus() {
 
   clearGateTimer();
   state.activeStimulusPageId = null;
-  state.selectionModalOpen = false;
+  state.selectionPhaseOpen = false;
   const selectionPopupElapsed = state.selectionPopupStartedAt
     ? Date.now() - state.selectionPopupStartedAt
     : 0;
