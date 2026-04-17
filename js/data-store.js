@@ -1,7 +1,7 @@
 import {
   buildStimulusPlan,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260417c";
+} from "./config.js?v=20260417l";
 
 const STORAGE_KEYS = {
   currentSession: "nm-study-current-session",
@@ -46,17 +46,87 @@ function safeParse(raw, fallback) {
   }
 }
 
+function createEmptyPhaseRecord(overrides = {}) {
+  return {
+    startedAt: null,
+    endedAt: null,
+    timeOnPageMs: 0,
+    gazePoints: [],
+    validSampleCount: 0,
+    invalidSampleCount: 0,
+    ...overrides,
+  };
+}
+
+function ensurePagePhaseData(record) {
+  const stimulusPhase = createEmptyPhaseRecord(
+    record?.phases?.stimulus || {
+      startedAt: record?.startedAt || null,
+      endedAt: record?.endedAt || null,
+      timeOnPageMs: record?.timeOnPageMs || 0,
+      gazePoints: Array.isArray(record?.gazePoints) ? record.gazePoints : [],
+      validSampleCount: record?.validSampleCount || 0,
+      invalidSampleCount: record?.invalidSampleCount || 0,
+    },
+  );
+
+  const selectionPopupPhase = createEmptyPhaseRecord(
+    record?.phases?.selectionPopup || {
+      startedAt: record?.selectionPopupStartedAt || null,
+      endedAt: record?.selectionPopupEndedAt || null,
+      timeOnPageMs: record?.selectionPopupTimeOnPageMs || 0,
+      gazePoints: Array.isArray(record?.selectionPopupGazePoints)
+        ? record.selectionPopupGazePoints
+        : [],
+      validSampleCount: record?.selectionPopupValidSampleCount || 0,
+      invalidSampleCount: record?.selectionPopupInvalidSampleCount || 0,
+    },
+  );
+
+  record.phases = {
+    stimulus: stimulusPhase,
+    selectionPopup: selectionPopupPhase,
+  };
+
+  record.startedAt = stimulusPhase.startedAt;
+  record.endedAt = stimulusPhase.endedAt;
+  record.timeOnPageMs = stimulusPhase.timeOnPageMs;
+  record.gazePoints = stimulusPhase.gazePoints;
+  record.validSampleCount = stimulusPhase.validSampleCount;
+  record.invalidSampleCount = stimulusPhase.invalidSampleCount;
+
+  record.selectionPopupStartedAt = selectionPopupPhase.startedAt;
+  record.selectionPopupEndedAt = selectionPopupPhase.endedAt;
+  record.selectionPopupTimeOnPageMs = selectionPopupPhase.timeOnPageMs;
+  record.selectionPopupGazePoints = selectionPopupPhase.gazePoints;
+  record.selectionPopupValidSampleCount = selectionPopupPhase.validSampleCount;
+  record.selectionPopupInvalidSampleCount = selectionPopupPhase.invalidSampleCount;
+
+  return record;
+}
+
 function buildPersistableSession(session) {
   return {
     ...session,
     pages: Object.fromEntries(
       Object.entries(session.pages || {}).map(([pageId, page]) => [
         pageId,
-        {
-          ...page,
-          // Keep browser storage compact so long studies do not exceed quota mid-run.
-          gazePoints: [],
-        },
+        (() => {
+          const persistedPage = ensurePagePhaseData({ ...page });
+          persistedPage.gazePoints = [];
+          persistedPage.selectionPopupGazePoints = [];
+          persistedPage.phases = {
+            stimulus: {
+              ...persistedPage.phases.stimulus,
+              gazePoints: [],
+            },
+            selectionPopup: {
+              ...persistedPage.phases.selectionPopup,
+              gazePoints: [],
+            },
+          };
+          return persistedPage;
+        })(),
       ]),
     ),
   };
@@ -82,6 +152,7 @@ function ensureRemoteSubmissionShape(session, config) {
     submittedAt: null,
     lastError: null,
     duplicate: false,
+    participantNumber: null,
     ...(session.remoteSubmission || {}),
   };
 
@@ -96,10 +167,11 @@ export function createSession(config) {
   );
 
   return ensureRemoteSubmissionShape({
-    schemaVersion: 2,
+    schemaVersion: 3,
     studyId: config.studyId,
     studyTitle: config.studyTitle,
     participantId,
+    participantNumber: null,
     createdAt: nowIso(),
     updatedAt: nowIso(),
     status: "created",
@@ -228,7 +300,7 @@ export function completeCalibration(session) {
 
 export function beginStimulusPage(session, page) {
   if (!session.pages[page.id]) {
-    session.pages[page.id] = {
+    session.pages[page.id] = ensurePagePhaseData({
       pageId: page.id,
       pageTitle: page.title,
       familyId: page.familyId || null,
@@ -246,15 +318,37 @@ export function beginStimulusPage(session, page) {
       gazePoints: [],
       validSampleCount: 0,
       invalidSampleCount: 0,
-    };
+      selectionPopupStartedAt: null,
+      selectionPopupEndedAt: null,
+      selectionPopupTimeOnPageMs: 0,
+      selectionPopupGazePoints: [],
+      selectionPopupValidSampleCount: 0,
+      selectionPopupInvalidSampleCount: 0,
+    });
   }
 
-  const record = session.pages[page.id];
-  record.startedAt = nowIso();
-  record.endedAt = null;
-  record.timeOnPageMs = 0;
+  const record = ensurePagePhaseData(session.pages[page.id]);
+  record.phases.stimulus = createEmptyPhaseRecord({
+    startedAt: nowIso(),
+  });
+  record.phases.selectionPopup = createEmptyPhaseRecord();
+  ensurePagePhaseData(record);
   record.selection = record.selection || null;
   session.status = "in-progress";
+  return saveCurrentSession(session);
+}
+
+export function beginSelectionPopupPhase(session, pageId) {
+  const record = session.pages[pageId];
+  if (!record) {
+    return session;
+  }
+
+  ensurePagePhaseData(record);
+  record.phases.selectionPopup = createEmptyPhaseRecord({
+    startedAt: nowIso(),
+  });
+  ensurePagePhaseData(record);
   return saveCurrentSession(session);
 }
 
@@ -269,20 +363,26 @@ export function updateStimulusSelection(session, pageId, option) {
   return saveCurrentSession(session);
 }
 
-export function appendGazePoint(session, pageId, sample) {
+export function appendGazePoint(session, pageId, sample, phase = "stimulus") {
   const record = session.pages[pageId];
   if (!record) {
     return session;
   }
 
-  record.gazePoints.push(sample);
+  ensurePagePhaseData(record);
+  const phaseKey = phase === "selectionPopup" ? "selectionPopup" : "stimulus";
+  const phaseRecord = record.phases[phaseKey];
+
+  phaseRecord.gazePoints.push(sample);
   if (sample.valid) {
-    record.validSampleCount += 1;
+    phaseRecord.validSampleCount += 1;
   } else {
-    record.invalidSampleCount += 1;
+    phaseRecord.invalidSampleCount += 1;
   }
 
-  const totalSamples = record.validSampleCount + record.invalidSampleCount;
+  ensurePagePhaseData(record);
+  const totalSamples =
+    phaseRecord.validSampleCount + phaseRecord.invalidSampleCount;
   if (totalSamples % 10 === 0) {
     return saveCurrentSession(session);
   }
@@ -290,14 +390,29 @@ export function appendGazePoint(session, pageId, sample) {
   return session;
 }
 
-export function completeStimulusPage(session, pageId, timeOnPageMs) {
+export function completeStimulusPage(session, pageId, phaseTimings = {}) {
   const record = session.pages[pageId];
   if (!record) {
     return session;
   }
 
-  record.endedAt = nowIso();
-  record.timeOnPageMs = Math.round(timeOnPageMs);
+  const {
+    stimulusTimeOnPageMs = 0,
+    selectionPopupTimeOnPageMs = 0,
+  } = phaseTimings;
+
+  ensurePagePhaseData(record);
+  record.phases.stimulus.endedAt = nowIso();
+  record.phases.stimulus.timeOnPageMs = Math.round(stimulusTimeOnPageMs);
+
+  if (record.phases.selectionPopup.startedAt) {
+    record.phases.selectionPopup.endedAt = nowIso();
+    record.phases.selectionPopup.timeOnPageMs = Math.round(
+      selectionPopupTimeOnPageMs,
+    );
+  }
+
+  ensurePagePhaseData(record);
   return saveCurrentSession(session);
 }
 
@@ -320,12 +435,19 @@ export function markRemoteSubmissionPending(session) {
 }
 
 export function markRemoteSubmissionSuccess(session, options = {}) {
+  const participantNumber =
+    Number.isFinite(options.participantNumber) && options.participantNumber > 0
+      ? Math.trunc(options.participantNumber)
+      : session.participantNumber || session.remoteSubmission?.participantNumber || null;
+
+  session.participantNumber = participantNumber;
   session.remoteSubmission = {
     ...(session.remoteSubmission || {}),
     status: "submitted",
     submittedAt: nowIso(),
     lastError: null,
     duplicate: Boolean(options.duplicate),
+    participantNumber,
   };
   return saveCurrentSession(session);
 }
@@ -390,6 +512,7 @@ export function buildSessionJson(session) {
 export function buildSummaryCsv(session, config) {
   const header = [
     "participant_id",
+    "participant_number",
     "study_id",
     "consent_timestamp",
     "age_category",
@@ -410,13 +533,25 @@ export function buildSummaryCsv(session, config) {
     "time_on_page_ms",
     "valid_sample_count",
     "invalid_sample_count",
+    "selection_popup_time_on_page_ms",
+    "selection_popup_valid_sample_count",
+    "selection_popup_invalid_sample_count",
+    "combined_time_on_page_ms",
+    "combined_valid_sample_count",
+    "combined_invalid_sample_count",
   ];
 
   const rows = resolveStimulusPlan(session, config).map((page) => {
-    const record = session.pages[page.id] || {};
+    const record = session.pages[page.id]
+      ? ensurePagePhaseData(session.pages[page.id])
+      : {};
     const profile = session.participantProfile || {};
+    const selectionPopupTime = record.selectionPopupTimeOnPageMs || 0;
+    const selectionPopupValid = record.selectionPopupValidSampleCount || 0;
+    const selectionPopupInvalid = record.selectionPopupInvalidSampleCount || 0;
     return [
       session.participantId,
+      session.participantNumber || session.remoteSubmission?.participantNumber || "",
       session.studyId,
       session.consent.timestamp || "",
       profile.ageCategory || "",
@@ -437,6 +572,12 @@ export function buildSummaryCsv(session, config) {
       record.timeOnPageMs || 0,
       record.validSampleCount || 0,
       record.invalidSampleCount || 0,
+      selectionPopupTime,
+      selectionPopupValid,
+      selectionPopupInvalid,
+      (record.timeOnPageMs || 0) + selectionPopupTime,
+      (record.validSampleCount || 0) + selectionPopupValid,
+      (record.invalidSampleCount || 0) + selectionPopupInvalid,
     ];
   });
 
@@ -453,11 +594,15 @@ export function buildHeatmapExport(session, config) {
   return JSON.stringify(
     {
       participantId: session.participantId,
+      participantNumber:
+        session.participantNumber || session.remoteSubmission?.participantNumber || null,
       studyId: session.studyId,
       participantProfile: session.participantProfile || {},
       exportedAt: nowIso(),
       pages: resolveStimulusPlan(session, config).map((page) => {
-        const record = session.pages[page.id];
+        const record = session.pages[page.id]
+          ? ensurePagePhaseData(session.pages[page.id])
+          : null;
         return {
           pageId: page.id,
           familyId: page.familyId || null,
@@ -469,6 +614,15 @@ export function buildHeatmapExport(session, config) {
           selection: record?.selection || null,
           timeOnPageMs: record?.timeOnPageMs || 0,
           gazePoints: record?.gazePoints || [],
+          selectionPopupTimeOnPageMs:
+            record?.selectionPopupTimeOnPageMs || 0,
+          selectionPopupGazePoints:
+            record?.selectionPopupGazePoints || [],
+          phases: {
+            stimulus: record?.phases?.stimulus || createEmptyPhaseRecord(),
+            selectionPopup:
+              record?.phases?.selectionPopup || createEmptyPhaseRecord(),
+          },
         };
       }),
     },

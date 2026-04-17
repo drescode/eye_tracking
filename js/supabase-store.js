@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-import { getStimulusPlan } from "./config.js?v=20260417c";
+import { getStimulusPlan } from "./config.js?v=20260417l";
 
 let cachedClient = null;
 let cachedConfigKey = "";
@@ -64,6 +64,13 @@ function getSupabaseClient(config) {
 function buildPageSummary(session, config) {
   return getStimulusPlan(session, config).map((page) => {
     const record = session.pages?.[page.id] || {};
+    const selectionPopupTime =
+      record.selectionPopupTimeOnPageMs || 0;
+    const selectionPopupValid =
+      record.selectionPopupValidSampleCount || 0;
+    const selectionPopupInvalid =
+      record.selectionPopupInvalidSampleCount || 0;
+
     return {
       page_id: page.id,
       family_id: page.familyId || null,
@@ -77,6 +84,14 @@ function buildPageSummary(session, config) {
       time_on_page_ms: record.timeOnPageMs || 0,
       valid_sample_count: record.validSampleCount || 0,
       invalid_sample_count: record.invalidSampleCount || 0,
+      selection_popup_time_on_page_ms: selectionPopupTime,
+      selection_popup_valid_sample_count: selectionPopupValid,
+      selection_popup_invalid_sample_count: selectionPopupInvalid,
+      combined_time_on_page_ms: (record.timeOnPageMs || 0) + selectionPopupTime,
+      combined_valid_sample_count:
+        (record.validSampleCount || 0) + selectionPopupValid,
+      combined_invalid_sample_count:
+        (record.invalidSampleCount || 0) + selectionPopupInvalid,
     };
   });
 }
@@ -101,11 +116,11 @@ export function buildSupabaseSubmission(config, session) {
     device_info: session.deviceInfo || {},
     page_summary: pageSummary,
     total_valid_samples: pageSummary.reduce(
-      (sum, page) => sum + (page.valid_sample_count || 0),
+      (sum, page) => sum + (page.combined_valid_sample_count || 0),
       0,
     ),
     total_invalid_samples: pageSummary.reduce(
-      (sum, page) => sum + (page.invalid_sample_count || 0),
+      (sum, page) => sum + (page.combined_invalid_sample_count || 0),
       0,
     ),
     session_payload: session,
@@ -117,12 +132,34 @@ export async function submitSessionToSupabase(config, session) {
   const settings = getSupabaseSettings(config);
   const payload = buildSupabaseSubmission(config, session);
 
+  const {
+    data: rpcData,
+    error: rpcError,
+  } = await client.rpc("submit_participant_session", { payload });
+
+  if (!rpcError) {
+    const resultRow = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+    return {
+      ok: true,
+      duplicate: Boolean(resultRow?.duplicate),
+      participantNumber:
+        Number.isFinite(resultRow?.participant_number) && resultRow.participant_number > 0
+          ? resultRow.participant_number
+          : null,
+    };
+  }
+
+  if (!/submit_participant_session/i.test(rpcError.message || "")) {
+    throw new Error(rpcError.message || "Supabase RPC submission failed.");
+  }
+
   const { error } = await client.from(settings.table).insert(payload);
 
   if (!error) {
     return {
       ok: true,
       duplicate: false,
+      participantNumber: null,
     };
   }
 
@@ -131,6 +168,7 @@ export async function submitSessionToSupabase(config, session) {
     return {
       ok: true,
       duplicate: true,
+      participantNumber: null,
     };
   }
 

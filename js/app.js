@@ -2,10 +2,11 @@ import {
   STUDY_CONFIG,
   TOTAL_STEPS,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260417g";
+} from "./config.js?v=20260417l";
 import {
   appendGazePoint,
   appendTrackingStatus,
+  beginSelectionPopupPhase,
   beginStimulusPage,
   completeCalibration,
   completeStimulusPage,
@@ -28,15 +29,15 @@ import {
   updateParticipantProfile,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260417g";
-import { WebgazerController } from "./webgazer-controller.js?v=20260417g";
-import { CalibrationSequence } from "./calibration.js?v=20260417g";
-import { HeatmapRenderer } from "./heatmap.js?v=20260417g";
+} from "./data-store.js?v=20260417l";
+import { WebgazerController } from "./webgazer-controller.js?v=20260417l";
+import { CalibrationSequence } from "./calibration.js?v=20260417l";
+import { HeatmapRenderer } from "./heatmap.js?v=20260417l";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260417g";
+} from "./supabase-store.js?v=20260417l";
 
 const query = new URLSearchParams(window.location.search);
 const initialSession = loadCurrentSession(STUDY_CONFIG);
@@ -57,6 +58,8 @@ const state = {
   gateRemainingMs: STUDY_CONFIG.stimulus.minimumViewingTimeMs,
   selectionModalOpen: false,
   stimulusViewingElapsedMs: 0,
+  selectionPopupStartedAt: 0,
+  currentGazePhase: "stimulus",
   remoteSubmissionInFlight: false,
   qualityCheckTimer: null,
   qualityCheck: {
@@ -275,6 +278,7 @@ async function uploadSessionToSupabase(options = {}) {
     const result = await submitSessionToSupabase(STUDY_CONFIG, state.session);
     state.session = markRemoteSubmissionSuccess(state.session, {
       duplicate: result.duplicate,
+      participantNumber: result.participantNumber,
     });
     state.remoteSubmissionInFlight = false;
     if (state.view === "final") {
@@ -1014,7 +1018,10 @@ function attachStimulusInteractions(page, previewMode = false) {
   }
 
   if (!previewMode && state.selectionModalOpen) {
-    webgazerController.clearPageContext();
+    const modal = stage.querySelector(".selection-modal");
+    const rectGetter = () =>
+      (modal || stage).getBoundingClientRect();
+    webgazerController.setPageContext(page.id, rectGetter);
   } else {
     const rectGetter = () => stage.getBoundingClientRect();
     webgazerController.setPageContext(page.id, rectGetter);
@@ -1032,7 +1039,9 @@ function openSelectionModal(page) {
   state.selectionModalOpen = true;
   state.stimulusViewingElapsedMs =
     Date.now() - state.currentPageStartedAt;
-  webgazerController.clearPageContext();
+  state.selectionPopupStartedAt = Date.now();
+  state.currentGazePhase = "selectionPopup";
+  state.session = beginSelectionPopupPhase(state.session, page.id);
   renderStimulus(false);
 }
 
@@ -1047,6 +1056,8 @@ function startStimulusPageTracking(page) {
   state.currentSelection = state.session.pages?.[page.id]?.selection || null;
   state.selectionModalOpen = false;
   state.stimulusViewingElapsedMs = 0;
+  state.selectionPopupStartedAt = 0;
+  state.currentGazePhase = "stimulus";
   state.session = beginStimulusPage(state.session, page);
   state.gateRemainingMs = STUDY_CONFIG.stimulus.minimumViewingTimeMs;
   state.gateTimer = window.setInterval(() => {
@@ -1163,8 +1174,16 @@ function handleNextStimulus() {
   clearGateTimer();
   state.activeStimulusPageId = null;
   state.selectionModalOpen = false;
+  const selectionPopupElapsed = state.selectionPopupStartedAt
+    ? Date.now() - state.selectionPopupStartedAt
+    : 0;
+  state.selectionPopupStartedAt = 0;
   state.stimulusViewingElapsedMs = 0;
-  state.session = completeStimulusPage(state.session, page.id, elapsed);
+  state.currentGazePhase = "stimulus";
+  state.session = completeStimulusPage(state.session, page.id, {
+    stimulusTimeOnPageMs: elapsed,
+    selectionPopupTimeOnPageMs: selectionPopupElapsed,
+  });
   webgazerController.clearPageContext();
 
   if (state.stimulusIndex < getCurrentStimulusPlan().length - 1) {
@@ -1185,11 +1204,10 @@ function renderFinal() {
     record: state.session.pages?.[page.id] || null,
   }));
   const stats = computeAggregateStats(getAllSessions(state.session), STUDY_CONFIG);
-  const remoteSubmissionUi = getRemoteSubmissionUiState();
   const submissionConfigured = isSupabaseConfigured(STUDY_CONFIG);
 
   app.innerHTML = `
-    <section class="final-grid">
+    <section class="final-grid ${state.adminMode ? "" : "final-grid--single"}">
       <article class="hero-card stack">
         <div>
           <p class="eyebrow">Study Complete</p>
@@ -1212,7 +1230,10 @@ function renderFinal() {
             <div class="metric">
               <span class="panel-muted">Valid gaze samples</span>
               <strong>${sessionPages.reduce(
-                (total, entry) => total + (entry.record?.validSampleCount || 0),
+                (total, entry) =>
+                  total +
+                  (entry.record?.validSampleCount || 0) +
+                  (entry.record?.selectionPopupValidSampleCount || 0),
                 0,
               )}</strong>
             </div>
@@ -1237,15 +1258,21 @@ function renderFinal() {
                   const label =
                     page.options.find((option) => option.id === record?.selection)?.label ||
                     "No selection";
+                  const combinedTime =
+                    (record?.timeOnPageMs || 0) +
+                    (record?.selectionPopupTimeOnPageMs || 0);
+                  const combinedSamples =
+                    (record?.validSampleCount || 0) +
+                    (record?.invalidSampleCount || 0) +
+                    (record?.selectionPopupValidSampleCount || 0) +
+                    (record?.selectionPopupInvalidSampleCount || 0);
                   return `
                     <tr>
                       <td>${escapeHtml(page.title)}</td>
                       <td>${escapeHtml(page.caseTitle)}</td>
                       <td>${escapeHtml(label)}</td>
-                      <td>${escapeHtml(formatDuration(record?.timeOnPageMs || 0))}</td>
-                      <td>${escapeHtml(
-                        String((record?.validSampleCount || 0) + (record?.invalidSampleCount || 0)),
-                      )}</td>
+                      <td>${escapeHtml(formatDuration(combinedTime))}</td>
+                      <td>${escapeHtml(String(combinedSamples))}</td>
                     </tr>
                   `;
                 })
@@ -1255,30 +1282,10 @@ function renderFinal() {
         </div>
       </article>
 
-      <aside class="panel stack">
-        <div class="upload-card">
-          <h3>Automatic Submission</h3>
-          <p>${
-            submissionConfigured
-              ? "Participant data is uploaded automatically to your Supabase project when this page loads."
-              : "Automatic upload is disabled until you add your Supabase URL, anon key, and table in js/config.js and run the SQL schema in supabase/schema.sql."
-          }</p>
-          <div class="pill">${escapeHtml(remoteSubmissionUi.label)}</div>
-          <p class="panel-muted" style="margin-top:12px;">${escapeHtml(
-            remoteSubmissionUi.detail,
-          )}</p>
-          ${
-            remoteSubmissionUi.canRetry
-              ? `<div class="button-row"><button id="retry-upload" class="button" type="button">${
-                  submissionConfigured ? "Retry upload" : "Show setup reminder"
-                }</button></div>`
-              : ""
-          }
-        </div>
-
-        ${
-          state.adminMode
-            ? `
+      ${
+        state.adminMode
+          ? `
+            <aside class="panel stack">
               <div class="upload-card">
                 <h3>Session Control</h3>
                 <p>You can start a fresh browser session for the next participant after exporting the current data.</p>
@@ -1286,13 +1293,7 @@ function renderFinal() {
                   <button id="restart-study" class="button" type="button">Start new participant session</button>
                 </div>
               </div>
-            `
-            : ""
-        }
 
-        ${
-          state.adminMode
-            ? `
               <div class="upload-card">
                 <h3>Dashboard Snapshot</h3>
                 <p>${escapeHtml(STUDY_CONFIG.admin.importHelp)}</p>
@@ -1335,21 +1336,12 @@ function renderFinal() {
                   </table>
                 </div>
               </div>
-            `
-            : ""
-        }
-      </aside>
+            </aside>
+          `
+          : ""
+      }
     </section>
   `;
-
-  const retryUploadButton = document.getElementById("retry-upload");
-  if (retryUploadButton) {
-    retryUploadButton.addEventListener("click", () => {
-      uploadSessionToSupabase({
-        manual: true,
-      });
-    });
-  }
 
   const restartButton = document.getElementById("restart-study");
   if (restartButton) {
@@ -1609,7 +1601,12 @@ function handleGazeSample(sample) {
     return;
   }
 
-  state.session = appendGazePoint(state.session, sample.pageId, sample);
+  state.session = appendGazePoint(
+    state.session,
+    sample.pageId,
+    sample,
+    state.currentGazePhase,
+  );
 
   if (state.adminMode && state.view !== "final") {
     refreshDebugOverlay();
