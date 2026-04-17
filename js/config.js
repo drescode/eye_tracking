@@ -19,9 +19,7 @@ function createSeededRandom(seed) {
 }
 
 function pickCaseForFamily(family, participantSeed) {
-  const random = createSeededRandom(`${participantSeed}:${family.id}`);
-  const index = Math.floor(random() * family.cases.length);
-  return family.cases[index];
+  return family.cases[0];
 }
 
 function materializeStimulusPage(family, caseDefinition, pageIndex) {
@@ -199,14 +197,14 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
             variantId: "students",
             label: "Students",
             title: "Built for students",
-            image: "./pics/22.jpg",
+            image: "./pics/2.jpeg",
             placeholder: true,
           },
           {
             variantId: "business",
             label: "Business",
             title: "Built for business",
-            image: "./pics/222.jpg",
+            image: "./pics/22.jpeg",
             placeholder: true,
           },
         ],
@@ -299,21 +297,21 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
             variantId: "pack-only",
             label: "Pack only",
             title: "Pack-only tile",
-            image: "./pics/4.jpg",
+            image: "./pics/3.jpeg",
             placeholder: true,
           },
           {
             variantId: "scene",
             label: "Prepared scene",
             title: "Pack plus bowl / berries scene",
-            image: "./pics/44.jpeg",
+            image: "./pics/33.jpeg",
             placeholder: true,
           },
           {
             variantId: "benefit-chips",
             label: "Benefit chips",
             title: "Pack plus benefit chips",
-            image: "./pics/444.jpeg",
+            image: "./pics/333.jpeg",
             placeholder: true,
           },
         ],
@@ -357,21 +355,21 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
             variantId: "mydifference",
             label: "MyDifference",
             title: "Loyalty-bundle framing",
-            image: "./pics/5.png",
+            image: "./pics/4.jpeg",
             placeholder: true,
           },
           {
             variantId: "markdown",
             label: "Markdown",
             title: "Straight markdown framing",
-            image: "./pics/55.png",
+            image: "./pics/44.jpeg",
             placeholder: true,
           },
           {
             variantId: "deal-badge",
             label: "Deal badge",
             title: "Generic deal badge",
-            image: "./pics/555.png",
+            image: "./pics/444.jpeg",
             placeholder: true,
           },
         ],
@@ -411,21 +409,21 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
             variantId: "header",
             label: "Header promise",
             title: "Promise in page header",
-            image: "./pics/1.jpg",
+            image: "./pics/5.jpeg",
             placeholder: true,
           },
           {
             variantId: "on-card",
             label: "On-card promise",
             title: "Promise inside product tile",
-            image: "./pics/111.jpg",
+            image: "./pics/55.jpeg",
             placeholder: true,
           },
           {
             variantId: "cart-rail",
             label: "Sticky rail",
             title: "Promise in sticky cart rail",
-            image: "./pics/11.jpg",
+            image: "./pics/555.jpeg",
             placeholder: true,
           },
         ],
@@ -468,21 +466,21 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
             variantId: "small-label",
             label: "Small label",
             title: "Existing-like label context",
-            image: "./pics/2.jpg",
+            image: "./pics/6.jpeg",
             placeholder: true,
           },
           {
             variantId: "side-block",
             label: "Side block",
             title: "Side / back warning block",
-            image: "./pics/22.jpg",
+            image: "./pics/66.jpeg",
             placeholder: true,
           },
           {
             variantId: "bottom-band",
             label: "Bottom band",
             title: "Larger bottom-band warning",
-            image: "./pics/222.jpg",
+            image: "./pics/666.jpeg",
             placeholder: true,
           },
         ],
@@ -493,7 +491,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
 
 export const STUDY_CONFIG = {
   studyId: "nm-sa-briefs-001",
-  studyBuildId: "20260417-be1-beans-refresh",
+  studyBuildId: "20260417-six-page-image-set-refresh",
   studyTitle: "South African E-Commerce Attention Study",
   studySubtitle:
     "A browser-based research prototype testing localized e-commerce briefs, retail framing, and spending-choice behavior in South African contexts.",

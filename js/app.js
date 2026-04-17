@@ -2,7 +2,7 @@ import {
   STUDY_CONFIG,
   TOTAL_STEPS,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260417t";
+} from "./config.js?v=20260417u";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -29,15 +29,15 @@ import {
   updateParticipantProfile,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260417t";
-import { WebgazerController } from "./webgazer-controller.js?v=20260417t";
-import { CalibrationSequence } from "./calibration.js?v=20260417t";
-import { HeatmapRenderer } from "./heatmap.js?v=20260417t";
+} from "./data-store.js?v=20260417u";
+import { WebgazerController } from "./webgazer-controller.js?v=20260417u";
+import { CalibrationSequence } from "./calibration.js?v=20260417u";
+import { HeatmapRenderer } from "./heatmap.js?v=20260417u";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260417t";
+} from "./supabase-store.js?v=20260417u";
 
 const query = new URLSearchParams(window.location.search);
 const initialSession = loadCurrentSession(STUDY_CONFIG);
@@ -1010,6 +1010,7 @@ function buildStimulusCard(option, selectedId, page) {
 }
 
 function buildStimulusSelectionModal(page, selectedId) {
+  const useRetailSelection = page?.cardTheme === "sixtysixty";
   return `
     <div class="selection-modal-backdrop" data-selection-overlay>
       <section
@@ -1033,7 +1034,9 @@ function buildStimulusSelectionModal(page, selectedId) {
                   type="button"
                   data-selection-option="${escapeHtml(option.id)}"
                 >
-                  <span class="selection-option__figure">
+                  <span class="selection-option__figure ${
+                    useRetailSelection ? "selection-option__figure--retail" : ""
+                  }">
                     <img
                       src="${escapeHtml(option.image)}"
                       alt="${escapeHtml(option.title)}"
