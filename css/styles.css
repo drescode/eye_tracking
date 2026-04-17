@@ -700,10 +700,19 @@ h3 {
 }
 
 .stimulus-card__figure--retail {
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 4;
   min-height: 0;
-  padding: 18px;
+  padding: 8px 10px 4px;
   border-radius: 16px;
+}
+
+.stimulus-card__figure--retail img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
 .stimulus-card__details {
@@ -886,6 +895,20 @@ h3 {
   height: 100%;
   object-fit: contain;
   object-position: center;
+}
+
+.selection-option__figure--retail {
+  aspect-ratio: 3 / 4;
+  padding: 8px 10px 4px;
+}
+
+.selection-option__figure--retail img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
 .selection-option__label {

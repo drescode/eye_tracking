@@ -163,25 +163,24 @@ export class WebgazerController {
     const videoFeed = document.getElementById("webgazerVideoFeed");
     const videoCanvas = document.getElementById("webgazerVideoCanvas");
 
-    [videoFeed, videoCanvas].forEach((element) => {
-      if (!element) {
-        return;
-      }
-
-      element.style.display = showPreview ? "block" : "none";
-      element.style.position = "fixed";
-      element.style.right = "18px";
-      element.style.bottom = "18px";
-      element.style.width = "220px";
-      element.style.height = "auto";
-      element.style.maxWidth = "min(220px, calc(100vw - 36px))";
-      element.style.borderRadius = "12px";
-      element.style.zIndex = "40";
-      element.style.background = "#fffdfa";
-      element.style.boxShadow = "0 18px 36px rgba(51, 39, 25, 0.16)";
-    });
+    if (videoFeed) {
+      videoFeed.style.display = showPreview ? "block" : "none";
+      videoFeed.style.position = "fixed";
+      videoFeed.style.left = "18px";
+      videoFeed.style.top = "18px";
+      videoFeed.style.right = "auto";
+      videoFeed.style.bottom = "auto";
+      videoFeed.style.width = "220px";
+      videoFeed.style.height = "auto";
+      videoFeed.style.maxWidth = "min(220px, calc(100vw - 36px))";
+      videoFeed.style.borderRadius = "12px";
+      videoFeed.style.zIndex = "40";
+      videoFeed.style.background = "#fffdfa";
+      videoFeed.style.boxShadow = "0 18px 36px rgba(51, 39, 25, 0.16)";
+    }
 
     if (videoCanvas) {
+      videoCanvas.style.display = "none";
       videoCanvas.style.pointerEvents = "none";
     }
   }
