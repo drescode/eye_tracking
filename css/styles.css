@@ -74,12 +74,24 @@ button {
   padding-top: 18px;
 }
 
+.site-shell--study {
+  width: min(calc(100% - 18px), 1640px);
+  padding-top: 14px;
+}
+
 .site-header {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.6fr);
   gap: 20px;
   align-items: end;
   margin-bottom: 24px;
+}
+
+.site-header--compact {
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
+  align-items: start;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .eyebrow {
@@ -101,7 +113,7 @@ h3 {
 
 h1 {
   font-size: clamp(2.4rem, 4vw, 4.1rem);
-  max-width: 11ch;
+  max-width: 17ch;
 }
 
 h2 {
@@ -113,15 +125,40 @@ h3 {
 }
 
 .site-subtitle {
-  max-width: 48ch;
+  max-width: 62ch;
   margin: 14px 0 0;
   font-size: 1.08rem;
   color: var(--text-soft);
 }
 
+.site-header--compact .site-header__meta {
+  max-width: none;
+}
+
+.site-header--compact .eyebrow {
+  margin-bottom: 4px;
+  font-size: 0.82rem;
+}
+
+.site-header--compact h1 {
+  max-width: 18ch;
+  font-size: clamp(1.95rem, 2.85vw, 3.2rem);
+  line-height: 0.96;
+}
+
+.site-header--compact .site-subtitle {
+  max-width: 72ch;
+  margin-top: 8px;
+  font-size: 0.98rem;
+}
+
 .site-header__status {
   display: grid;
   gap: 14px;
+}
+
+.site-header--compact .site-header__status {
+  gap: 10px;
 }
 
 .progress-card,
@@ -140,6 +177,10 @@ h3 {
 .progress-card {
   padding: 16px 18px;
   border-radius: var(--radius-md);
+}
+
+.site-header--compact .progress-card {
+  padding: 14px 16px;
 }
 
 .progress-card__row {
@@ -235,6 +276,10 @@ h3 {
 .app-shell {
   display: grid;
   gap: 24px;
+}
+
+.site-shell--study .app-shell {
+  gap: 16px;
 }
 
 .hero-grid,
@@ -469,6 +514,18 @@ h3 {
   gap: 18px;
 }
 
+.site-shell--study .study-frame {
+  gap: 14px;
+}
+
+.site-shell--study .study-frame > .hero-card {
+  padding: 22px 24px;
+}
+
+.site-shell--study .study-frame .lead {
+  font-size: 1rem;
+}
+
 .stimulus-stage {
   position: relative;
   overflow: hidden;
@@ -484,12 +541,21 @@ h3 {
   padding: 24px;
 }
 
+.site-shell--study .stimulus-stage--immersive {
+  min-height: calc(100vh - 168px);
+  padding: 20px 22px;
+}
+
 .stimulus-stage__header {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: start;
   margin-bottom: 22px;
+}
+
+.site-shell--study .stimulus-stage__header {
+  margin-bottom: 14px;
 }
 
 .stage-kicker {
@@ -516,6 +582,10 @@ h3 {
 .stimulus-grid--immersive {
   min-height: clamp(460px, 64vh, 780px);
   margin-bottom: 16px;
+}
+
+.site-shell--study .stimulus-grid--immersive {
+  min-height: clamp(500px, 70vh, 860px);
 }
 
 .stimulus-card {
@@ -628,6 +698,10 @@ h3 {
   padding-top: 8px;
 }
 
+.site-shell--study .stimulus-stage__footer {
+  padding-top: 2px;
+}
+
 .selection-modal-backdrop {
   position: absolute;
   inset: 0;
@@ -728,6 +802,10 @@ h3 {
     linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.92)),
     radial-gradient(circle at center, rgba(135, 90, 56, 0.12), transparent 45%);
   overflow: hidden;
+}
+
+.site-shell--study .calibration-stage {
+  min-height: calc(100vh - 286px);
 }
 
 .calibration-grid {
@@ -988,6 +1066,11 @@ h3 {
     padding-top: 18px;
   }
 
+  .site-shell--study {
+    width: min(calc(100% - 20px), 100%);
+    padding-top: 18px;
+  }
+
   .hero-card,
   .panel,
   .summary-card,
@@ -1003,6 +1086,11 @@ h3 {
   .stimulus-stage__footer {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .site-header--compact h1 {
+    max-width: 12ch;
+    font-size: clamp(2rem, 8vw, 3rem);
   }
 
 }
