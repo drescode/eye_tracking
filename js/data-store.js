@@ -338,6 +338,8 @@ export function beginStimulusPage(session, page) {
   }
 
   const record = ensurePagePhaseData(session.pages[page.id]);
+  record.selection = null;
+  record.selectedLabel = null;
   record.phases.stimulus = createEmptyPhaseRecord({
     startedAt: nowIso(),
   });

@@ -950,10 +950,11 @@ function renderStimulusInstructions() {
 function buildStimulusCard(option, selectedId, page) {
   const selected = selectedId === option.id;
   const useRetailCard = page?.cardTheme === "sixtysixty";
+  const selectable = state.selectionPhaseOpen;
 
   if (useRetailCard) {
     return `
-      <article class="stimulus-card stimulus-card--retail ${selected ? "is-selected" : ""}" data-option-id="${escapeHtml(
+      <article class="stimulus-card stimulus-card--retail ${selectable ? "is-selectable" : ""} ${selected ? "is-selected" : ""}" data-option-id="${escapeHtml(
         option.id,
       )}">
         <div class="stimulus-card__figure stimulus-card__figure--retail">
@@ -994,7 +995,7 @@ function buildStimulusCard(option, selectedId, page) {
   }
 
   return `
-    <article class="stimulus-card ${selected ? "is-selected" : ""}" data-option-id="${escapeHtml(
+    <article class="stimulus-card ${selectable ? "is-selectable" : ""} ${selected ? "is-selected" : ""}" data-option-id="${escapeHtml(
       option.id,
     )}">
       <div class="stimulus-card__figure">
@@ -1081,7 +1082,7 @@ function startStimulusPageTracking(page) {
   clearGateTimer();
   state.activeStimulusPageId = page.id;
   state.currentPageStartedAt = Date.now();
-  state.currentSelection = state.session.pages?.[page.id]?.selection || null;
+  state.currentSelection = null;
   state.selectionPhaseOpen = false;
   state.stimulusViewingElapsedMs = 0;
   state.selectionPopupStartedAt = 0;
