@@ -31,7 +31,7 @@ import {
   upsertImportedSessions,
 } from "./data-store.js?v=20260418j";
 import { WebgazerController } from "./webgazer-controller.js?v=20260418j";
-import { CalibrationSequence } from "./calibration.js?v=20260418j";
+import { CalibrationSequence } from "./calibration.js?v=20260418k";
 import { HeatmapRenderer } from "./heatmap.js?v=20260418j";
 import {
   getSupabaseConfigurationMessage,

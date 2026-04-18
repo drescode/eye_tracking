@@ -33,12 +33,6 @@ export class CalibrationSequence {
             )
             .join("")}
         </div>
-        <div class="calibration-status-inline">
-          <strong>Progress:</strong>
-          <span id="calibration-status">
-            Point 1 of ${this.points.length}. Click the highlighted target ${this.config.clicksPerPoint} times.
-          </span>
-        </div>
       </div>
     `;
 
@@ -76,7 +70,9 @@ export class CalibrationSequence {
     });
 
     if (point.clicks < this.config.clicksPerPoint) {
-      this.statusElement.textContent = `Point ${index + 1} of ${this.points.length}. ${this.config.clicksPerPoint - point.clicks} clicks remaining.`;
+      if (this.statusElement) {
+        this.statusElement.textContent = `Point ${index + 1} of ${this.points.length}. ${this.config.clicksPerPoint - point.clicks} clicks remaining.`;
+      }
       return;
     }
 
@@ -87,7 +83,9 @@ export class CalibrationSequence {
     this.activeIndex += 1;
 
     if (this.activeIndex >= this.points.length) {
-      this.statusElement.textContent = this.config.completionMessage;
+      if (this.statusElement) {
+        this.statusElement.textContent = this.config.completionMessage;
+      }
       this.onComplete({
         points: this.points,
       });
@@ -98,7 +96,9 @@ export class CalibrationSequence {
     nextButton.disabled = false;
     nextButton.classList.add("is-active");
     this.activatePoint(this.activeIndex);
-    this.statusElement.textContent = `Point ${this.activeIndex + 1} of ${this.points.length}. Click the highlighted target ${this.config.clicksPerPoint} times.`;
+    if (this.statusElement) {
+      this.statusElement.textContent = `Point ${this.activeIndex + 1} of ${this.points.length}. Click the highlighted target ${this.config.clicksPerPoint} times.`;
+    }
   }
 
   activatePoint(index) {
