@@ -1137,15 +1137,19 @@ function renderStimulus(previewMode = false) {
           String(page.options.length || 3),
         )};"
       >
-        <div class="stimulus-stage__header">
-          <div class="stimulus-stage__meta">
-            <p class="stage-kicker">${previewMode ? "Admin Preview" : escapeHtml(
-              `${page.familyLabel} · ${page.caseId}`,
-            )}</p>
-            <p class="helper-text">${escapeHtml(page.caseTitle)}</p>
-          </div>
-          <div class="timing-chip">${escapeHtml(`Template ${page.template}`)}</div>
-        </div>
+        ${
+          previewMode
+            ? `
+              <div class="stimulus-stage__header">
+                <div class="stimulus-stage__meta">
+                  <p class="stage-kicker">Admin Preview</p>
+                  <p class="helper-text">${escapeHtml(page.caseTitle)}</p>
+                </div>
+                <div class="timing-chip">${escapeHtml(`Template ${page.template}`)}</div>
+              </div>
+            `
+            : ""
+        }
 
         <div class="stimulus-grid stimulus-grid--immersive">
           ${page.options
