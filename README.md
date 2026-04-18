@@ -159,53 +159,79 @@ The app also uses `localStorage` during runtime for:
 
 ## Automatic collection with Supabase
 
-The project now includes a client-side Supabase submission path so participant sessions can be uploaded automatically from the debrief page instead of relying only on manual JSON download.
+The project now includes a client-side Supabase submission path that sends one raw JSON payload to PostgreSQL, then normalizes it into relational analytics tables through a database function. This keeps collection simple in the browser while making the database clean and notebook-friendly.
 
 Files involved:
 
 - [`js/config.js`](/Users/andre/Desktop/research/js/config.js)
 - [`js/supabase-store.js`](/Users/andre/Desktop/research/js/supabase-store.js)
 - [`supabase/schema.sql`](/Users/andre/Desktop/research/supabase/schema.sql)
+- [`supabase/reset_all.sql`](/Users/andre/Desktop/research/supabase/reset_all.sql)
+- [`supabase/analysis_queries.sql`](/Users/andre/Desktop/research/supabase/analysis_queries.sql)
+- [`analysis/README.md`](/Users/andre/Desktop/research/analysis/README.md)
 
 Setup steps:
 
 1. Create a Supabase project.
-2. In the Supabase SQL editor, run [`supabase/schema.sql`](/Users/andre/Desktop/research/supabase/schema.sql).
-3. In [`js/config.js`](/Users/andre/Desktop/research/js/config.js), set:
+2. If you want a fully fresh database, first run [`supabase/reset_all.sql`](/Users/andre/Desktop/research/supabase/reset_all.sql) in the Supabase SQL editor.
+3. Run [`supabase/schema.sql`](/Users/andre/Desktop/research/supabase/schema.sql) in the Supabase SQL editor.
+4. In [`js/config.js`](/Users/andre/Desktop/research/js/config.js), set:
    - `remoteStorage.supabase.enabled` to `true`
    - `remoteStorage.supabase.url` to your project URL
    - `remoteStorage.supabase.anonKey` to your publishable or anon key
-   - `remoteStorage.supabase.table` to `participant_sessions` unless you renamed the table
-4. Push the updated site to GitHub Pages.
+   - `remoteStorage.supabase.table` can stay configured but the browser now submits through the database RPC instead of direct table inserts
+5. Push the updated site to GitHub Pages.
 
 Important:
 
 - Use the Supabase publishable/anon key in the browser, not the service role key.
-- The included policy allows anonymous inserts only. It does not expose participant rows for browser-side reading.
+- The browser calls `public.submit_experiment_session(payload jsonb)`, which upserts:
+  - `participants`
+  - `sessions`
+  - `pages`
+  - `page_options`
+  - `page_views`
+  - `gaze_data`
+  - `aoi_definitions`
+  - `choices`
+- This lets the browser keep a single submit step while PostgreSQL stores analysis-ready relational data.
 - Keep the JSON export buttons enabled as a backup in case a participant’s network fails during submission.
 
 ## Python analysis from Supabase
 
-A starter script is included at [`analysis/supabase_visualize.py`](/Users/andre/Desktop/research/analysis/supabase_visualize.py).
+A notebook-friendly pipeline is included at:
 
-It fetches participant rows from the `participant_sessions` table, flattens the `page_summary` data, and writes:
+- [`analysis/eye_tracking_pipeline.py`](/Users/andre/Desktop/research/analysis/eye_tracking_pipeline.py)
+- [`analysis/supabase_visualize.py`](/Users/andre/Desktop/research/analysis/supabase_visualize.py)
+- [`analysis/README.md`](/Users/andre/Desktop/research/analysis/README.md)
 
-- `page_summary.csv`
-- `choice_counts.png`
-- `dwell_time.png`
+The pipeline loads relational tables and analysis views, then writes:
+
+- `clean_sessions.csv`
+- `quality_valid_samples_per_participant.png`
+- `quality_exclusion_reasons.csv`
+- `participant_profile_dashboard.png`
+- `choice_share_grouped_bar.png`
+- `aoi_dwell_time_boxplot_violin.png`
+- `ttff_summary.csv`
+- `ttff_mean_comparison.png`
+- heatmap overlays
+- scanpath transition outputs
+- segment comparison charts
+- logistic regression summary
+- final insights report
 
 Example:
 
 ```bash
-export SUPABASE_URL="https://YOUR_PROJECT_REF.supabase.co"
-export SUPABASE_SERVICE_ROLE_KEY="YOUR_SERVICE_ROLE_KEY"
-python analysis/supabase_visualize.py
+export DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+python /Users/andre/Desktop/research/analysis/supabase_visualize.py
 ```
 
 Install the required packages first:
 
 ```bash
-pip install requests pandas matplotlib seaborn
+pip install -r /Users/andre/Desktop/research/analysis/requirements.txt
 ```
 
 ## Admin mode and aggregated heatmaps
@@ -278,5 +304,3 @@ This prototype should be treated as a research or pilot tool, not as a substitut
 - The site clearly states that attention is estimated from webcam input.
 - Data remains client-side unless manually exported.
 - If camera permission is denied or WebGazer fails to initialize, the study does not proceed.
-
-

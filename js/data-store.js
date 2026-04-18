@@ -1,7 +1,7 @@
 import {
   buildStimulusPlan,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260417v";
+} from "./config.js?v=20260418a";
 
 const CURRENT_SCHEMA_VERSION = 4;
 

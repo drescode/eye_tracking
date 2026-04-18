@@ -8,6 +8,7 @@ export class CalibrationSequence {
     this.activeIndex = 0;
     this.onProgress = () => {};
     this.onComplete = () => {};
+    this.trainingTimer = null;
   }
 
   mount(container, hooks = {}) {
@@ -50,6 +51,8 @@ export class CalibrationSequence {
 
       button.addEventListener("click", () => this.handleClick(index, button));
     });
+
+    this.activatePoint(this.activeIndex);
   }
 
   handleClick(index, button) {
@@ -61,14 +64,7 @@ export class CalibrationSequence {
     point.clicks += 1;
     button.dataset.count = `${point.clicks}/${this.config.clicksPerPoint}`;
 
-    if (window.webgazer?.recordScreenPosition) {
-      const rect = button.getBoundingClientRect();
-      window.webgazer.recordScreenPosition(
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2,
-        "click",
-      );
-    }
+    this.trainCurrentPoint(button);
 
     this.onProgress({
       pointId: point.id,
@@ -87,6 +83,7 @@ export class CalibrationSequence {
     button.classList.remove("is-active");
     button.classList.add("is-complete");
     button.disabled = true;
+    this.stopTraining();
     this.activeIndex += 1;
 
     if (this.activeIndex >= this.points.length) {
@@ -100,6 +97,41 @@ export class CalibrationSequence {
     const nextButton = this.buttons[this.activeIndex];
     nextButton.disabled = false;
     nextButton.classList.add("is-active");
+    this.activatePoint(this.activeIndex);
     this.statusElement.textContent = `Point ${this.activeIndex + 1} of ${this.points.length}. Click the highlighted target ${this.config.clicksPerPoint} times.`;
+  }
+
+  activatePoint(index) {
+    const button = this.buttons?.[index];
+    if (!button) {
+      return;
+    }
+
+    this.stopTraining();
+    this.trainingTimer = window.setInterval(() => {
+      this.trainCurrentPoint(button);
+    }, 20);
+  }
+
+  trainCurrentPoint(button) {
+    const rect = button.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    if (window.webgazer?.watchListener) {
+      window.webgazer.watchListener(centerX, centerY);
+      return;
+    }
+
+    if (window.webgazer?.recordScreenPosition) {
+      window.webgazer.recordScreenPosition(centerX, centerY, "click");
+    }
+  }
+
+  stopTraining() {
+    if (this.trainingTimer) {
+      window.clearInterval(this.trainingTimer);
+      this.trainingTimer = null;
+    }
   }
 }

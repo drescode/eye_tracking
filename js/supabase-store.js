@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-import { getStimulusPlan } from "./config.js?v=20260417v";
+import { getStimulusPlan } from "./config.js?v=20260418a";
 
 let cachedClient = null;
 let cachedConfigKey = "";
@@ -129,14 +129,11 @@ export function buildSupabaseSubmission(config, session) {
 
 export async function submitSessionToSupabase(config, session) {
   const client = getSupabaseClient(config);
-  const settings = getSupabaseSettings(config);
   const payload = buildSupabaseSubmission(config, session);
 
-  const { data, error } = await client
-    .from(settings.table)
-    .insert(payload)
-    .select("participant_number")
-    .single();
+  const { data, error } = await client.rpc("submit_experiment_session", {
+    payload,
+  });
 
   if (!error) {
     return {
@@ -146,17 +143,11 @@ export async function submitSessionToSupabase(config, session) {
         Number.isFinite(data?.participant_number) && data.participant_number > 0
           ? data.participant_number
           : null,
+      sessionId: data?.session_id || null,
     };
   }
 
   const message = error.message || "Supabase insert failed.";
-  if (error.code === "23505" || /duplicate key|unique/i.test(message)) {
-    return {
-      ok: true,
-      duplicate: true,
-      participantNumber: null,
-    };
-  }
 
   throw new Error(message);
 }
