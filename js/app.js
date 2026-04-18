@@ -961,6 +961,7 @@ function buildStimulusCard(option, selectedId, page) {
           <img
             src="${escapeHtml(option.image)}"
             alt="${escapeHtml(option.title)}"
+            style="--stimulus-image-scale: ${escapeHtml(String(option.imageScale || 1))};"
             loading="eager"
           />
         </div>
@@ -1002,6 +1003,7 @@ function buildStimulusCard(option, selectedId, page) {
         <img
           src="${escapeHtml(option.image)}"
           alt="${escapeHtml(option.title)}"
+          style="--stimulus-image-scale: ${escapeHtml(String(option.imageScale || 1))};"
           loading="eager"
         />
       </div>

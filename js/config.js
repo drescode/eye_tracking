@@ -43,6 +43,7 @@ function materializeStimulusPage(family, caseDefinition, pageIndex) {
       label: option.label || `Variant ${String.fromCharCode(65 + optionIndex)}`,
       title: option.title || option.label || `Variant ${String.fromCharCode(65 + optionIndex)}`,
       image: option.image,
+      imageScale: option.imageScale || 1,
       productName: option.productName || option.title || option.label || "",
       sizeLabel: option.sizeLabel || "",
       price: option.price || "",
@@ -470,6 +471,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
             label: "Small label",
             title: "Existing-like label context",
             image: "./pics/6.jpeg",
+            imageScale: 1,
             placeholder: true,
           },
           {
@@ -477,6 +479,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
             label: "Side block",
             title: "Side / back warning block",
             image: "./pics/66.jpeg",
+            imageScale: 1.12,
             placeholder: true,
           },
           {
@@ -484,6 +487,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
             label: "Bottom band",
             title: "Larger bottom-band warning",
             image: "./pics/666.jpeg",
+            imageScale: 1.5,
             placeholder: true,
           },
         ],
