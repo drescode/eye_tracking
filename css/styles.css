@@ -619,7 +619,7 @@ h3 {
   display: grid;
   grid-template-columns: repeat(
     var(--stimulus-columns, 3),
-    minmax(0, var(--stimulus-card-max-width, 430px))
+    minmax(0, var(--stimulus-card-max-width, 450px))
   );
   justify-content: center;
   gap: 22px;
@@ -641,7 +641,7 @@ h3 {
   display: grid;
   grid-template-rows: auto auto;
   align-content: start;
-  width: min(100%, var(--stimulus-card-max-width, 430px));
+  width: min(100%, var(--stimulus-card-max-width, 450px));
   padding: 16px;
   border-radius: 22px;
   border: 1px solid var(--line);
@@ -660,7 +660,7 @@ h3 {
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: var(--stimulus-frame-ratio, 1 / 1);
+  height: var(--stimulus-frame-height, clamp(500px, 42vw, 640px));
   min-height: 0;
   padding: 2px;
   overflow: hidden;
@@ -727,7 +727,7 @@ h3 {
 }
 
 .stimulus-card__figure--retail {
-  aspect-ratio: var(--stimulus-frame-ratio, 1 / 1);
+  height: var(--stimulus-frame-height, clamp(500px, 42vw, 640px));
   min-height: 0;
   padding: 2px;
   border-radius: 16px;
@@ -751,6 +751,7 @@ h3 {
 .stimulus-card__product-block {
   display: grid;
   gap: 4px;
+  min-height: 92px;
 }
 
 .stimulus-card__product-name {
@@ -1207,6 +1208,12 @@ h3 {
   .stimulus-grid {
     grid-template-columns: 1fr;
     justify-content: stretch;
+  }
+
+  .stimulus-card__figure,
+  .stimulus-card__figure--retail {
+    height: auto;
+    aspect-ratio: 1 / 1;
   }
 
   .stimulus-stage {
