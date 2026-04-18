@@ -142,7 +142,7 @@ export class WebgazerController {
 
   updateWebgazerVisibility() {
     const webgazer = window.webgazer;
-    const showPreview = this.initialized || this.calibrating || Boolean(this.pageId);
+    const showPreview = false;
 
     if (webgazer && typeof webgazer.showVideo === "function") {
       webgazer.showVideo(showPreview);
@@ -164,24 +164,15 @@ export class WebgazerController {
     const videoCanvas = document.getElementById("webgazerVideoCanvas");
 
     if (videoFeed) {
-      videoFeed.style.display = showPreview ? "block" : "none";
-      videoFeed.style.position = "fixed";
-      videoFeed.style.left = "18px";
-      videoFeed.style.top = "18px";
-      videoFeed.style.right = "auto";
-      videoFeed.style.bottom = "auto";
-      videoFeed.style.width = "220px";
-      videoFeed.style.height = "auto";
-      videoFeed.style.maxWidth = "min(220px, calc(100vw - 36px))";
-      videoFeed.style.borderRadius = "12px";
-      videoFeed.style.zIndex = "40";
-      videoFeed.style.background = "#fffdfa";
-      videoFeed.style.boxShadow = "0 18px 36px rgba(51, 39, 25, 0.16)";
+      videoFeed.style.display = "none";
+      videoFeed.style.pointerEvents = "none";
+      videoFeed.style.opacity = "0";
     }
 
     if (videoCanvas) {
       videoCanvas.style.display = "none";
       videoCanvas.style.pointerEvents = "none";
+      videoCanvas.style.opacity = "0";
     }
   }
 
