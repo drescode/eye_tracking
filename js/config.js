@@ -99,6 +99,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         template: "A",
         cardTheme: "sixtysixty",
         imageSetId: "be1-checkers",
+        frameAspectRatio: "1 / 1",
         retailer: "Checkers Sixty60",
         product:
           "KOO Baked Beans in Tomato Sauce 400g vs Checkers Housebrand Baked Beans in Tomato Sauce 410g",
@@ -271,7 +272,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "FUTURELIFE High Protein Smart Food",
         template: "A",
         imageSetId: "prd1-futurelife",
-        frameAspectRatio: "4 / 5",
+        frameAspectRatio: "3 / 4",
         retailer: "FUTURELIFE",
         product: "FUTURELIFE High Protein Smart food 500g",
         prompt:
@@ -328,7 +329,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "Woolworths MyDifference reward framing",
         template: "A",
         imageSetId: "pri3-woolworths",
-        frameAspectRatio: "3 / 2",
+        frameAspectRatio: "1 / 1",
         retailer: "Woolworths",
         product:
           "Woolworths women’s Quality Sale item such as the Slash Neck Modal Blend T-shirt",
@@ -386,7 +387,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "Checkers Sixty60 60-minute promise placement",
         template: "A",
         imageSetId: "pla1-checkers-delivery",
-        frameAspectRatio: "3 / 2",
+        frameAspectRatio: "1 / 1",
         retailer: "Checkers Sixty60",
         product: "KOO baked beans tile within the Checkers delivery environment",
         prompt:
@@ -441,7 +442,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "Savanna health-message block visibility",
         template: "C",
         imageSetId: "sm1-savanna",
-        frameAspectRatio: "1 / 1",
+        frameAspectRatio: "3 / 4",
         retailer: "Checkers",
         product: "Savanna Premium Dry Cider Bottle 500ml",
         prompt:
@@ -493,7 +494,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
 
 export const STUDY_CONFIG = {
   studyId: "nm-sa-briefs-001",
-  studyBuildId: "20260418-page3-frame-fix",
+  studyBuildId: "20260418-raw-session-direct-insert",
   studyTitle: "South African E-Commerce Attention Study",
   studySubtitle:
     "A browser-based research prototype testing localized e-commerce briefs, retail framing, and spending-choice behavior in South African contexts.",

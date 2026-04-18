@@ -1,62 +1,56 @@
 # Eye-Tracking Analytics Pipeline
 
-This folder turns the raw browser session payload into a notebook-friendly analytics workflow:
+This project now uses a simple, reliable raw-session collection flow:
 
-1. GitHub Pages study collects the participant session.
-2. Supabase/PostgreSQL stores the session through `public.submit_experiment_session(payload jsonb)`.
-3. The database normalizes the payload into relational tables.
-4. Jupyter or Python scripts query the clean relational tables and views.
-5. Charts, heatmaps, reports, and CSV exports are written to `analysis_output/`.
+1. The GitHub Pages study collects one full participant session in the browser.
+2. The website writes one row into `public.participant_sessions`.
+3. Python/Jupyter loads `participant_sessions` and restructures the raw JSON into:
+   - `participants_clean`
+   - `sessions_clean`
+   - `pages_clean`
+   - `choices_clean`
+   - `gaze_data_clean`
+   - AOI, TTFF, dwell, heatmap, and pre-choice analysis outputs
+
+The database stays simple and stable. The heavier transformation work happens in Python, where it is easier to debug, export, and iterate on for academic reporting.
 
 ## Database setup
 
-In Supabase SQL Editor:
+In Supabase SQL Editor, run these in order:
 
-1. Open [`/Users/andre/Desktop/research/supabase/reset_all.sql`](/Users/andre/Desktop/research/supabase/reset_all.sql), copy the full file contents, paste into a new query, and run it.
-2. Open [`/Users/andre/Desktop/research/supabase/schema.sql`](/Users/andre/Desktop/research/supabase/schema.sql), copy the full file contents, paste into a new query, and run it.
-3. Open [`/Users/andre/Desktop/research/supabase/analysis_queries.sql`](/Users/andre/Desktop/research/supabase/analysis_queries.sql) whenever you want starter quality-screening and export queries.
+1. Open [/Users/andre/Desktop/research/supabase/reset_all.sql](/Users/andre/Desktop/research/supabase/reset_all.sql), copy the full contents, paste into a new query, and run it.
+2. Open [/Users/andre/Desktop/research/supabase/schema.sql](/Users/andre/Desktop/research/supabase/schema.sql), copy the full contents, paste into a new query, and run it.
+3. Verify collection with:
 
-The schema creates:
+```sql
+select * from public.participant_sessions order by created_at desc;
+```
 
-- `participants`
-- `sessions`
-- `pages`
-- `page_options`
-- `page_views`
-- `gaze_data`
-- `aoi_definitions`
-- `choices`
+The working write target is:
 
-It also creates analysis views:
+- `public.participant_sessions`
 
-- `session_quality_screening`
-- `session_exclusion_reasons`
-- `clean_sessions`
-- `analysis_page_choices`
-- `choice_share_analysis`
-- `aoi_hits`
-- `aoi_metrics`
-- `family_template_benchmark_analysis`
+That table stores:
+
+- participant identity and profile fields
+- valid/invalid sample totals
+- page summary JSON
+- full `session_payload` JSON
 
 ## Front-end submission flow
 
-The browser sends one JSON payload, and the database function does the normalization:
+The browser submits directly into `participant_sessions`:
 
-- function: `public.submit_experiment_session(payload jsonb)`
-- browser file: [`/Users/andre/Desktop/research/js/supabase-store.js`](/Users/andre/Desktop/research/js/supabase-store.js)
+- browser file: [/Users/andre/Desktop/research/js/supabase-store.js](/Users/andre/Desktop/research/js/supabase-store.js)
+- method: direct insert with returned `participant_number`
 
-That function:
+This keeps data capture simple and robust:
 
-- upserts `participants`
-- upserts `sessions`
-- upserts `pages`
-- upserts `page_options`
-- loads `aoi_definitions`
-- inserts `page_views`
-- inserts `choices`
-- inserts `gaze_data`
+- no RPC normalization dependency
+- no multi-table write requirement during collection
+- one complete raw row per finished participant
 
-## Jupyter / Python setup
+## Jupyter / Python workflow
 
 Install the analysis requirements:
 
@@ -64,60 +58,61 @@ Install the analysis requirements:
 pip install -r /Users/andre/Desktop/research/analysis/requirements.txt
 ```
 
-Set your PostgreSQL connection string:
+Set your database connection:
 
 ```bash
 export DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
 ```
 
-Then run the end-to-end analysis pipeline:
+Then open the main notebook-style analysis script:
 
 ```bash
-python /Users/andre/Desktop/research/analysis/supabase_visualize.py
+/Users/andre/Desktop/research/analysis/eye_tracking_research_notebook.py
 ```
 
-## Notebook example
+This notebook now treats `participant_sessions` as the primary source of truth and derives the logical analysis tables locally.
 
-```python
-import pandas as pd
-from sqlalchemy import create_engine
+## What the notebook derives automatically
 
-from eye_tracking_pipeline import EyeTrackingAnalysisPipeline
+From `participant_sessions`, the notebook reconstructs:
 
-engine = create_engine("postgresql://USER:PASSWORD@HOST:PORT/DATABASE")
-pipeline = EyeTrackingAnalysisPipeline(engine, "analysis_output")
+- `participants`
+- `sessions`
+- `pages`
+- `choices`
+- `gaze_data`
+- `page_views`
+- `page_options`
+- placeholder `aoi_definitions` rows when AOI labels exist in the session brief metadata
 
-quality_df = pipeline.load_table("session_quality")
-clean_df = pipeline.load_table("clean_sessions")
-choices_df = pipeline.load_table("analysis_page_choices")
-aoi_df = pipeline.load_table("aoi_metrics")
+It then produces:
 
-pipeline.run_all()
-```
+- exclusion tables
+- clean sessions
+- participant profile summaries
+- choice-share summaries
+- dwell and TTFF outputs
+- combined and subgroup heatmaps
+- pre-choice heatmaps by selected option
+- transition / scanpath summaries
+- segment comparisons
+- predictive choice models
+- exportable CSV and Excel outputs
 
-## Deliverables produced by the pipeline
+## Output location
 
-The pipeline writes exportable files such as:
+The notebook writes outputs to:
 
-- `clean_sessions.csv`
-- `quality_valid_samples_per_participant.png`
-- `quality_exclusion_reasons.csv`
-- `participant_profile_dashboard.png`
-- `choice_share_grouped_bar.png`
-- `aoi_dwell_time_boxplot_violin.png`
-- `ttff_summary.csv`
-- `ttff_mean_comparison.png`
-- `heatmap_<page_id>_combined.png`
-- `heatmap_<page_id>_selected_<option>.png`
-- `scanpath_transition_matrix.csv`
-- `scanpath_transition_heatmap.png`
-- `segment_comparison_dwell.png`
-- `choice_attention_model.txt`
-- `template_family_benchmarking.png`
-- `final_insights_report.md`
+- `/Users/andre/Desktop/research/analysis/notebook_output`
 
-## AOI geometry note
+## Important AOI note
 
-TTFF and AOI dwell analysis require populated AOI bounds in `aoi_definitions`.
+The raw-session pipeline supports AOI analysis best when you have real normalized AOI bounds (`x_min`, `x_max`, `y_min`, `y_max`) available for each page.
 
-If a page only has AOI labels and no normalized coordinates (`x_min`, `x_max`, `y_min`, `y_max`), the pipeline will still run, but AOI-specific outputs such as TTFF, dwell, and scanpath metrics will be skipped with a clear note.
+If only AOI labels are available and no geometry is defined, the notebook still runs, but:
+
+- heatmaps still work
+- page-level gaze metrics still work
+- AOI-specific dwell / TTFF / transition analyses may be limited or skipped
+
+That keeps collection reliable without blocking the rest of the research workflow.
