@@ -5,6 +5,7 @@ drop view if exists public.aoi_metrics cascade;
 drop view if exists public.aoi_hits cascade;
 drop view if exists public.choice_share_analysis cascade;
 drop view if exists public.analysis_page_choices cascade;
+drop view if exists public.participant_sessions cascade;
 drop view if exists public.clean_sessions cascade;
 drop view if exists public.session_exclusion_reasons cascade;
 drop view if exists public.session_quality_screening cascade;

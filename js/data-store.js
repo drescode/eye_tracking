@@ -1,9 +1,9 @@
 import {
   buildStimulusPlan,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260418c";
+} from "./config.js?v=20260418d";
 
-const CURRENT_SCHEMA_VERSION = 5;
+const CURRENT_SCHEMA_VERSION = 6;
 
 const STORAGE_KEYS = {
   currentSession: "nm-study-current-session",

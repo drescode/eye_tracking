@@ -814,6 +814,34 @@ select *
 from public.session_exclusion_reasons
 where exclusion_reason_count = 0;
 
+create or replace view public.participant_sessions as
+select
+  s.session_id,
+  s.participant_id,
+  p.participant_number,
+  s.study_id,
+  s.start_time,
+  s.end_time,
+  s.calibration_completed,
+  s.total_valid_samples,
+  s.total_invalid_samples,
+  s.pages_completed,
+  s.expected_pages,
+  s.session_duration,
+  p.age_category,
+  p.province,
+  p.gender_identity,
+  p.shopping_frequency,
+  p.device_type,
+  p.retailer_familiarity,
+  s.submission_source,
+  s.raw_payload,
+  s.created_at,
+  s.updated_at
+from public.sessions s
+join public.participants p
+  on p.participant_id = s.participant_id;
+
 create or replace view public.analysis_page_choices as
 select
   c.choice_id,
@@ -948,4 +976,3 @@ left join public.choices c
   on c.session_id = pv.session_id
  and c.page_id = pv.page_id
 group by p.case_family, p.template_type;
-
