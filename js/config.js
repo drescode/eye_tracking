@@ -498,7 +498,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
 
 export const STUDY_CONFIG = {
   studyId: "nm-sa-briefs-001",
-  studyBuildId: "20260418-standardized-stimulus-layout",
+  studyBuildId: "20260418-expanded-calibration-stage",
   studyTitle: "South African E-Commerce Attention Study",
   studySubtitle:
     "A browser-based research prototype testing localized e-commerce briefs, retail framing, and spending-choice behavior in South African contexts.",
@@ -642,15 +642,15 @@ export const STUDY_CONFIG = {
     completionMessage:
       "Calibration complete. Gaze tracking will continue during the stimulus pages.",
     points: [
-      { id: "p1", x: 12, y: 14 },
-      { id: "p2", x: 50, y: 14 },
-      { id: "p3", x: 88, y: 14 },
-      { id: "p4", x: 12, y: 50 },
+      { id: "p1", x: 7, y: 9 },
+      { id: "p2", x: 50, y: 9 },
+      { id: "p3", x: 93, y: 9 },
+      { id: "p4", x: 7, y: 50 },
       { id: "p5", x: 50, y: 50 },
-      { id: "p6", x: 88, y: 50 },
-      { id: "p7", x: 12, y: 86 },
-      { id: "p8", x: 50, y: 86 },
-      { id: "p9", x: 88, y: 86 },
+      { id: "p6", x: 93, y: 50 },
+      { id: "p7", x: 7, y: 91 },
+      { id: "p8", x: 50, y: 91 },
+      { id: "p9", x: 93, y: 91 },
     ],
   },
   tracking: {
