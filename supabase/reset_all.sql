@@ -10,6 +10,9 @@ drop view if exists public.session_exclusion_reasons cascade;
 drop view if exists public.session_quality_screening cascade;
 
 drop function if exists public.submit_experiment_session(jsonb) cascade;
+drop function if exists public.submit_participant_session(jsonb) cascade;
+drop function if exists public.rebuild_normalized_participant_data() cascade;
+drop function if exists public.normalize_participant_session(uuid) cascade;
 drop function if exists public.normalize_aoi_type(text) cascade;
 drop function if exists public.safe_double(text) cascade;
 drop function if exists public.safe_integer(text) cascade;
@@ -23,7 +26,9 @@ drop table if exists public.page_options cascade;
 drop table if exists public.pages cascade;
 drop table if exists public.sessions cascade;
 drop table if exists public.participants cascade;
+drop table if exists public.participant_sessions cascade;
 
 drop sequence if exists public.participant_number_seq cascade;
+drop sequence if exists public.participant_sessions_participant_number_seq cascade;
 
 commit;

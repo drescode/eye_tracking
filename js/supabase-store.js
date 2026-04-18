@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-import { getStimulusPlan } from "./config.js?v=20260418a";
+import { getStimulusPlan } from "./config.js?v=20260418c";
 
 let cachedClient = null;
 let cachedConfigKey = "";
@@ -31,7 +31,7 @@ export function getSupabaseConfigurationMessage(config) {
     return "Supabase automatic submission is configured.";
   }
 
-  return "Automatic submission is not configured yet. Add your Supabase URL, anon key, and table name in js/config.js.";
+  return "Automatic submission is not configured yet. Add your Supabase URL and anon key in js/config.js, then run the relational Supabase schema.";
 }
 
 function getSupabaseClient(config) {

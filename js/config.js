@@ -271,7 +271,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "FUTURELIFE High Protein Smart Food",
         template: "A",
         imageSetId: "prd1-futurelife",
-        frameAspectRatio: "3 / 4",
+        frameAspectRatio: "4 / 5",
         retailer: "FUTURELIFE",
         product: "FUTURELIFE High Protein Smart food 500g",
         prompt:
@@ -493,7 +493,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
 
 export const STUDY_CONFIG = {
   studyId: "nm-sa-briefs-001",
-  studyBuildId: "20260418-page2-frame-fix",
+  studyBuildId: "20260418-page3-frame-fix",
   studyTitle: "South African E-Commerce Attention Study",
   studySubtitle:
     "A browser-based research prototype testing localized e-commerce briefs, retail framing, and spending-choice behavior in South African contexts.",
