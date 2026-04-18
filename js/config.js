@@ -169,7 +169,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "Lenovo V15 on Makro Business",
         template: "B",
         imageSetId: "seg1-makro",
-        frameAspectRatio: "16 / 10",
+        frameAspectRatio: "1 / 1",
         retailer: "Makro Business",
         product: "Lenovo V15 AMD Ryzen 3 laptop listing",
         prompt:
@@ -493,7 +493,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
 
 export const STUDY_CONFIG = {
   studyId: "nm-sa-briefs-001",
-  studyBuildId: "20260417-frame-fix-and-sql-reset",
+  studyBuildId: "20260418-page2-frame-fix",
   studyTitle: "South African E-Commerce Attention Study",
   studySubtitle:
     "A browser-based research prototype testing localized e-commerce briefs, retail framing, and spending-choice behavior in South African contexts.",
