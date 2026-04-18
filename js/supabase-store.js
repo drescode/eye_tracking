@@ -1,5 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-import { getStimulusPlan } from "./config.js?v=20260418e";
+import { getStimulusPlan } from "./config.js?v=20260418f";
 
 let cachedClient = null;
 let cachedConfigKey = "";

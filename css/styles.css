@@ -617,7 +617,11 @@ h3 {
 
 .stimulus-grid {
   display: grid;
-  grid-template-columns: repeat(var(--stimulus-columns, 3), minmax(0, 1fr));
+  grid-template-columns: repeat(
+    var(--stimulus-columns, 3),
+    minmax(0, var(--stimulus-card-max-width, 430px))
+  );
+  justify-content: center;
   gap: 22px;
   margin-bottom: 28px;
   align-items: start;
@@ -637,12 +641,14 @@ h3 {
   display: grid;
   grid-template-rows: auto auto;
   align-content: start;
+  width: min(100%, var(--stimulus-card-max-width, 430px));
   padding: 16px;
   border-radius: 22px;
   border: 1px solid var(--line);
   background: var(--surface);
   min-height: 0;
   align-self: start;
+  justify-self: center;
   transition:
     transform 150ms ease,
     border-color 150ms ease,
@@ -654,9 +660,9 @@ h3 {
   display: grid;
   place-items: center;
   width: 100%;
-  aspect-ratio: var(--stimulus-frame-ratio, 4 / 5);
+  aspect-ratio: var(--stimulus-frame-ratio, 1 / 1);
   min-height: 0;
-  padding: 8px;
+  padding: 2px;
   overflow: hidden;
   border-radius: 18px;
   border: 1px solid var(--line);
@@ -721,9 +727,9 @@ h3 {
 }
 
 .stimulus-card__figure--retail {
-  aspect-ratio: 3 / 4;
+  aspect-ratio: var(--stimulus-frame-ratio, 1 / 1);
   min-height: 0;
-  padding: 8px 10px 4px;
+  padding: 2px;
   border-radius: 16px;
 }
 
@@ -733,7 +739,7 @@ h3 {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  object-position: center bottom;
+  object-position: center;
 }
 
 .stimulus-card__details {
@@ -1200,6 +1206,7 @@ h3 {
 
   .stimulus-grid {
     grid-template-columns: 1fr;
+    justify-content: stretch;
   }
 
   .stimulus-stage {

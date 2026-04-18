@@ -2,7 +2,7 @@ import {
   STUDY_CONFIG,
   TOTAL_STEPS,
   getStimulusPlan as resolveStimulusPlan,
-} from "./config.js?v=20260418e";
+} from "./config.js?v=20260418f";
 import {
   appendGazePoint,
   appendTrackingStatus,
@@ -29,15 +29,15 @@ import {
   updateParticipantProfile,
   updateStimulusSelection,
   upsertImportedSessions,
-} from "./data-store.js?v=20260418e";
-import { WebgazerController } from "./webgazer-controller.js?v=20260418e";
-import { CalibrationSequence } from "./calibration.js?v=20260418e";
-import { HeatmapRenderer } from "./heatmap.js?v=20260418e";
+} from "./data-store.js?v=20260418f";
+import { WebgazerController } from "./webgazer-controller.js?v=20260418f";
+import { CalibrationSequence } from "./calibration.js?v=20260418f";
+import { HeatmapRenderer } from "./heatmap.js?v=20260418f";
 import {
   getSupabaseConfigurationMessage,
   isSupabaseConfigured,
   submitSessionToSupabase,
-} from "./supabase-store.js?v=20260418e";
+} from "./supabase-store.js?v=20260418f";
 
 const query = new URLSearchParams(window.location.search);
 const initialSession = loadCurrentSession(STUDY_CONFIG);
@@ -1131,7 +1131,7 @@ function renderStimulus(previewMode = false) {
       <div
         id="stimulus-stage"
         class="stimulus-stage stimulus-stage--immersive"
-        style="--stimulus-frame-ratio: ${escapeHtml(page.frameAspectRatio || "4 / 5")}; --stimulus-columns: ${escapeHtml(
+        style="--stimulus-frame-ratio: ${escapeHtml(page.frameAspectRatio || "1 / 1")}; --stimulus-columns: ${escapeHtml(
           String(page.options.length || 3),
         )};"
       >

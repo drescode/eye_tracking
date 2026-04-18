@@ -34,7 +34,7 @@ function materializeStimulusPage(family, caseDefinition, pageIndex) {
     template: caseDefinition.template,
     cardTheme: caseDefinition.cardTheme || null,
     imageSetId: caseDefinition.imageSetId,
-    frameAspectRatio: caseDefinition.frameAspectRatio || "4 / 5",
+    frameAspectRatio: caseDefinition.frameAspectRatio || "1 / 1",
     prompt: caseDefinition.prompt,
     question: caseDefinition.question,
     options: caseDefinition.options.map((option, optionIndex) => ({
@@ -215,7 +215,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "Coca-Cola 440ml localized sports framing",
         template: "C",
         imageSetId: "seg3-coke",
-        frameAspectRatio: "3 / 4",
+        frameAspectRatio: "1 / 1",
         retailer: "Coca-Cola South Africa promotion",
         product: "Coca-Cola Original Taste 440ml PET",
         prompt:
@@ -272,7 +272,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "FUTURELIFE High Protein Smart Food",
         template: "A",
         imageSetId: "prd1-futurelife",
-        frameAspectRatio: "3 / 4",
+        frameAspectRatio: "1 / 1",
         retailer: "FUTURELIFE",
         product: "FUTURELIFE High Protein Smart food 500g",
         prompt:
@@ -442,7 +442,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
         title: "Savanna health-message block visibility",
         template: "C",
         imageSetId: "sm1-savanna",
-        frameAspectRatio: "3 / 4",
+        frameAspectRatio: "1 / 1",
         retailer: "Checkers",
         product: "Savanna Premium Dry Cider Bottle 500ml",
         prompt:
@@ -494,7 +494,7 @@ const SOUTH_AFRICA_CASE_FAMILIES = [
 
 export const STUDY_CONFIG = {
   studyId: "nm-sa-briefs-001",
-  studyBuildId: "20260418-raw-session-direct-insert",
+  studyBuildId: "20260418-standardized-stimulus-layout",
   studyTitle: "South African E-Commerce Attention Study",
   studySubtitle:
     "A browser-based research prototype testing localized e-commerce briefs, retail framing, and spending-choice behavior in South African contexts.",
